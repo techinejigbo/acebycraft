@@ -1,0 +1,85 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // Helper functions
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+
+    function isOwner(userId) {
+      return isAuthenticated() && request.auth.uid == userId;
+    }
+
+    // Users collection: Students and School admins
+    match /users/{userId} {
+      // Allow user to read/write their own profile
+      allow read: if isAuthenticated();
+      allow create, update: if isOwner(userId);
+      allow delete: if false;
+    }
+
+    // Schools Directory: Students need to query schools for registration dropdown
+    match /schools/{schoolId} {
+      allow read: if isAuthenticated();
+      allow create, update: if isOwner(schoolId);
+      allow delete: if false;
+    }
+
+    // Weekly Assessments & 9-Subject Catalogs
+    match /assessments/{assessmentId} {
+      allow read: if isAuthenticated();
+      allow write: if false; // Only Admin SDK can publish
+
+      // Questions subcollections: Never contain correctOption or secret keys
+      match /{allSubcollections=**} {
+        allow read: if isAuthenticated();
+        allow write: if false;
+      }
+    }
+
+    // ANSWER KEYS: STRICT LOCKDOWN!
+    // Never exposed to any client. Accessible strictly via Firebase Admin SDK
+    match /answerKeys/{assessmentId} {
+      allow read, write: if false;
+    }
+
+    // Submissions:
+    // Students can only read their own submissions.
+    // Verified schools can only read submissions from their own registered school!
+    match /submissions/{submissionId} {
+      allow read: if isAuthenticated() && (
+        resource == null || 
+        resource.data.userId == request.auth.uid ||
+        resource.data.schoolId == request.auth.uid
+      );
+      // Client cannot directly write submissions; graded via /api/grade-weekly-assessment
+      allow write: if false;
+    }
+
+    // Sunday Night Weekly Reports & Public Leaderboards
+    match /weeklyReports/{cycleId} {
+      allow read: if isAuthenticated();
+      allow write: if false;
+    }
+
+    // Volunteer Teacher Question Submissions (staging for IT review)
+    match /teacherContributions/{contribId} {
+      allow create: if isAuthenticated();
+      allow read: if isAuthenticated() && resource.data.authorId == request.auth.uid;
+      allow update, delete: if false;
+    }
+
+    // Airtime transaction logs: completely protected from tampering
+    match /airtimeTransactions/{txId} {
+      allow read, write: if false; // Serverless backend access only
+    }
+
+    // System settings & configs (Airtime winner quota, score cutoff, etc.)
+    match /systemSettings/{docId} {
+      allow read: if isAuthenticated();
+      allow write: if false;
+    }
+  }
+}
+

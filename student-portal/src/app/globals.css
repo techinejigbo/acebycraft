@@ -1,0 +1,120 @@
+@import url('https://fonts.googleapis.com/css2?family=Nunito:wght@600;700;800;900&display=swap');
+@import "tailwindcss";
+
+@theme inline {
+  --font-sans: 'Nunito', ui-sans-serif, system-ui, sans-serif;
+}
+
+:root {
+  --feather: #58cc02;
+  --feather-shadow: #58a700;
+  --macaw: #1cb0f6;
+  --macaw-shadow: #1899d6;
+  --cardinal: #ff4b4b;
+  --cardinal-shadow: #ea2b2b;
+  --bee: #ffc800;
+  --bee-shadow: #e5b400;
+  --fox: #ff9600;
+  --fox-shadow: #e08600;
+  --beetle: #ce82ff;
+  --beetle-shadow: #a560d6;
+  --eel: #4b4b4b;
+  --wolf: #777777;
+  --hare: #afafaf;
+  --swan: #e5e5e5;
+  --polar: #f7f7f7;
+  --snow: #ffffff;
+}
+
+html, body {
+  font-family: 'Nunito', ui-sans-serif, system-ui, sans-serif;
+  background: var(--snow);
+  color: var(--eel);
+  font-weight: 700;
+  -webkit-font-smoothing: antialiased;
+}
+
+h1, h2, h3, h4 { font-weight: 900; color: var(--eel); }
+
+/* ---------- 3D BUTTONS ---------- */
+.btn {
+  --b: var(--feather); --s: var(--feather-shadow); --c: #fff;
+  display: inline-flex; align-items: center; justify-content: center; gap: .5rem;
+  padding: .85rem 1.25rem; border-radius: 16px; border: 2px solid var(--s);
+  border-bottom-width: 4px; background: var(--b); color: var(--c);
+  font-weight: 900; font-size: .9rem; letter-spacing: .8px; text-transform: uppercase;
+  cursor: pointer; transition: transform .08s, filter .15s; user-select: none; text-decoration: none;
+}
+.btn:hover { filter: brightness(1.06); }
+.btn:active { transform: translateY(3px); border-bottom-width: 1px; margin-bottom: 3px; }
+.btn:disabled { background: var(--swan); border-color: var(--swan); color: var(--hare); cursor: not-allowed; filter: none; }
+.btn-blue { --b: var(--macaw); --s: var(--macaw-shadow); }
+.btn-red { --b: var(--cardinal); --s: var(--cardinal-shadow); }
+.btn-yellow { --b: var(--bee); --s: var(--bee-shadow); }
+.btn-purple { --b: var(--beetle); --s: var(--beetle-shadow); }
+.btn-outline { --b: #fff; --s: var(--swan); --c: var(--macaw); border-color: var(--swan); }
+.btn-outline:hover { background: var(--polar); }
+.btn-block { width: 100%; }
+
+/* ---------- CARDS ---------- */
+.card {
+  background: #fff; border: 2px solid var(--swan); border-bottom-width: 4px;
+  border-radius: 16px; padding: 1.25rem;
+}
+.card-green { background: #d7ffb8; border-color: var(--feather); color: var(--feather-shadow); }
+.card-yellow { background: #fff5cc; border-color: var(--bee); }
+.card-red { background: #ffdfe0; border-color: var(--cardinal); }
+.card-blue { background: #ddf4ff; border-color: var(--macaw); }
+.card-select {
+  cursor: pointer; transition: background .1s, transform .08s; text-align: left;
+}
+.card-select:hover { background: var(--polar); }
+.card-select:active { transform: translateY(2px); border-bottom-width: 2px; }
+.card-select.selected { background: #ddf4ff; border-color: var(--macaw); color: var(--macaw-shadow); }
+
+/* ---------- INPUTS ---------- */
+.input {
+  width: 100%; background: var(--polar); border: 2px solid var(--swan);
+  border-radius: 16px; padding: .85rem 1rem; font-weight: 700; font-size: 1rem; color: var(--eel);
+  outline: none; transition: border-color .15s;
+}
+.input:focus { border-color: var(--macaw); background: #fff; }
+.input::placeholder { color: var(--hare); }
+.label { display: block; font-size: .75rem; letter-spacing: .8px; text-transform: uppercase; color: var(--wolf); font-weight: 900; margin-bottom: .4rem; }
+
+/* ---------- CHIPS / PILLS ---------- */
+.pill {
+  display: inline-flex; align-items: center; gap: .4rem; padding: .35rem .75rem;
+  border-radius: 999px; font-weight: 900; font-size: .8rem;
+}
+
+/* ---------- PROGRESS ---------- */
+.progress { height: 16px; background: var(--swan); border-radius: 999px; overflow: hidden; }
+.progress > span {
+  display: block; height: 100%; background: var(--feather); border-radius: 999px; position: relative;
+  transition: width .4s cubic-bezier(.2,.8,.2,1);
+}
+.progress > span::after {
+  content: ''; position: absolute; left: 8px; right: 8px; top: 4px; height: 4px;
+  background: rgba(255,255,255,.35); border-radius: 999px;
+}
+
+/* ---------- PATH NODES ---------- */
+.node {
+  width: 76px; height: 68px; border-radius: 50%; display: flex; align-items: center; justify-content: center;
+  color: #fff; font-weight: 900; border: 0; cursor: pointer; transition: transform .08s;
+  background: var(--feather); box-shadow: 0 8px 0 var(--feather-shadow);
+}
+.node:active { transform: translateY(6px); box-shadow: 0 2px 0 var(--feather-shadow); }
+.node.done { background: var(--bee); box-shadow: 0 8px 0 var(--bee-shadow); }
+.node.locked { background: var(--swan); box-shadow: 0 8px 0 #cfcfcf; color: var(--hare); cursor: not-allowed; }
+
+/* ---------- ANIMATIONS ---------- */
+@keyframes bob { 0%,100% { transform: translateY(0); } 50% { transform: translateY(-8px); } }
+.animate-bob { animation: bob 2.4s ease-in-out infinite; }
+@keyframes pop { 0% { transform: scale(.9); } 60% { transform: scale(1.06); } 100% { transform: scale(1); } }
+.animate-pop { animation: pop .3s ease-out; }
+@keyframes shake { 0%,100% { transform: translateX(0); } 25% { transform: translateX(-6px); } 75% { transform: translateX(6px); } }
+.animate-shake { animation: shake .3s; }
+@keyframes slideUp { from { transform: translateY(100%); } to { transform: translateY(0); } }
+.animate-slide-up { animation: slideUp .25s ease-out; }
