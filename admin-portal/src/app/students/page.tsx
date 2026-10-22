@@ -78,14 +78,14 @@ export default function StudentsDirectoryPage() {
     ];
 
     const rows = students.map((s) => [
-      `"${s.displayName.replace(/"/g, '""')}"`,
-      `"${s.studentId || 'N/A'}"`,
-      `"${s.phone}"`,
+      `"${(s.displayName || '').replace(/"/g, '""')}"`,
+      `"${s.studentId || (s.uid ? s.uid.slice(0, 10).toUpperCase() : 'N/A')}"`,
+      `"${s.phone || 'N/A'}"`,
       `"${s.network || 'MTN'}"`,
-      `"${s.schoolClass || 'Biology'}"`,
-      s.totalCaScore.toFixed(1),
-      s.completedAssessmentsCount || 0,
-      s.totalAirtimeWonNgn || 0,
+      `"${s.schoolClass || 'Senior Secondary'}"`,
+      (s.totalCaScore ?? s.averageScorePercentage ?? 0).toFixed(1),
+      s.completedAssessmentsCount ?? s.totalAssessmentsTaken ?? 0,
+      s.totalAirtimeWonNgn ?? 0,
       `"${s.lastActive ? new Date(s.lastActive).toLocaleDateString() : 'Active'}"`,
     ]);
 
@@ -93,7 +93,7 @@ export default function StudentsDirectoryPage() {
     const encodedUri = encodeURI(csvContent);
     const link = document.createElement('a');
     link.setAttribute('href', encodedUri);
-    link.setAttribute('download', `Biology_CA_Score_Report_${new Date().toISOString().slice(0, 10)}.csv`);
+    link.setAttribute('download', `Student_Score_Report_${new Date().toISOString().slice(0, 10)}.csv`);
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
@@ -114,18 +114,17 @@ export default function StudentsDirectoryPage() {
   }
 
   const filteredStudents = students.filter((s) => {
-    const matchesSearch = 
-      s.displayName.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      s.studentId.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      s.phone.includes(searchQuery);
+    const nameMatch = (s.displayName || '').toLowerCase().includes(searchQuery.toLowerCase());
+    const idMatch = (s.studentId || s.uid || '').toLowerCase().includes(searchQuery.toLowerCase());
+    const phoneMatch = (s.phone || '').includes(searchQuery);
 
     const matchesClass = classFilter === 'ALL' || s.schoolClass === classFilter;
-    return matchesSearch && matchesClass;
+    return (nameMatch || idMatch || phoneMatch) && matchesClass;
   });
 
   const uniqueClasses = Array.from(new Set(students.map((s) => s.schoolClass).filter(Boolean)));
-  const totalCohortCA = students.reduce((acc, s) => acc + s.totalCaScore, 0);
-  const totalAirtimeDisbursed = students.reduce((acc, s) => acc + s.totalAirtimeWonNgn, 0);
+  const totalCohortCA = students.reduce((acc, s) => acc + (s.totalCaScore ?? s.averageScorePercentage ?? 0), 0);
+  const totalAirtimeDisbursed = students.reduce((acc, s) => acc + (s.totalAirtimeWonNgn ?? 0), 0);
 
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 w-full space-y-8">
@@ -240,18 +239,18 @@ export default function StudentsDirectoryPage() {
                       #{idx + 1}
                     </td>
                     <td className="px-6 py-4">
-                      <div className="font-extrabold text-slate-900 text-sm">{stud.displayName}</div>
+                      <div className="font-extrabold text-slate-900 text-sm">{stud.displayName || 'Student'}</div>
                       <span className="text-xs font-mono text-emerald-800 bg-emerald-50 px-1.5 py-0.5 rounded border border-emerald-200 inline-block mt-0.5 font-bold">
-                        {stud.studentId}
+                        {stud.studentId || (stud.uid ? stud.uid.slice(0, 10).toUpperCase() : 'N/A')}
                       </span>
                     </td>
                     <td className="px-6 py-4 text-xs text-slate-600 font-medium">
-                      {stud.schoolClass || 'SS 3 Science'}
+                      {stud.schoolClass || 'Senior Secondary'}
                     </td>
                     <td className="px-6 py-4 text-xs font-mono text-slate-700">
                       <div className="flex items-center space-x-1">
                         <Phone className="w-3 h-3 text-slate-400" />
-                        <span>{stud.phone}</span>
+                        <span>{stud.phone || 'N/A'}</span>
                       </div>
                       <span className="text-[10px] text-slate-500 block mt-0.5 font-sans font-medium">
                         {stud.network || 'MTN'}
@@ -259,14 +258,14 @@ export default function StudentsDirectoryPage() {
                     </td>
                     <td className="px-6 py-4">
                       <span className="text-base font-black text-emerald-700">
-                        {stud.totalCaScore.toFixed(1)} pts
+                        {(stud.totalCaScore ?? stud.averageScorePercentage ?? 0).toFixed(1)} pts
                       </span>
                     </td>
                     <td className="px-6 py-4 text-xs text-slate-600">
-                      <span className="font-bold text-slate-900">{stud.completedAssessmentsCount}</span> tests attended
+                      <span className="font-bold text-slate-900">{stud.completedAssessmentsCount ?? stud.totalAssessmentsTaken ?? 0}</span> tests attended
                     </td>
                     <td className="px-6 py-4">
-                      {stud.totalAirtimeWonNgn > 0 ? (
+                      {(stud.totalAirtimeWonNgn ?? 0) > 0 ? (
                         <span className="inline-flex items-center space-x-1 px-2.5 py-1 rounded-full text-xs font-bold bg-amber-100 text-amber-800 border border-amber-300">
                           <Zap className="w-3 h-3 text-amber-600" />
                           <span>₦{stud.totalAirtimeWonNgn}</span>
@@ -337,7 +336,7 @@ export default function StudentsDirectoryPage() {
               <div className="p-4 rounded-2xl bg-emerald-50 border border-emerald-200 text-center">
                 <span className="text-[10px] uppercase font-bold text-emerald-700 block">Total CA Marks</span>
                 <span className="text-2xl font-black text-emerald-900 mt-1 block">
-                  {selectedStudent.totalCaScore.toFixed(1)}
+                  {(selectedStudent.totalCaScore ?? selectedStudent.averageScorePercentage ?? 0).toFixed(1)}
                 </span>
                 <span className="text-[10px] text-emerald-600 block">Cumulative Score</span>
               </div>
@@ -345,7 +344,7 @@ export default function StudentsDirectoryPage() {
               <div className="p-4 rounded-2xl bg-slate-50 border border-slate-200 text-center">
                 <span className="text-[10px] uppercase font-bold text-slate-500 block">Assessments</span>
                 <span className="text-2xl font-black text-slate-900 mt-1 block">
-                  {selectedStudent.completedAssessmentsCount}
+                  {selectedStudent.completedAssessmentsCount ?? selectedStudent.totalAssessmentsTaken ?? 0}
                 </span>
                 <span className="text-[10px] text-slate-500 block">Completed Quizzes</span>
               </div>
@@ -353,7 +352,7 @@ export default function StudentsDirectoryPage() {
               <div className="p-4 rounded-2xl bg-amber-50 border border-amber-200 text-center">
                 <span className="text-[10px] uppercase font-bold text-amber-700 block">Airtime Won</span>
                 <span className="text-2xl font-black text-amber-900 mt-1 block">
-                  ₦{selectedStudent.totalAirtimeWonNgn}
+                  ₦{selectedStudent.totalAirtimeWonNgn ?? 0}
                 </span>
                 <span className="text-[10px] text-amber-600 block">Disbursed to line</span>
               </div>
@@ -366,9 +365,11 @@ export default function StudentsDirectoryPage() {
                 <div>
                   <span className="text-slate-400 block text-[10px]">Matriculation ID</span>
                   <div className="flex items-center space-x-1.5 mt-0.5">
-                    <span className="font-mono font-bold text-slate-800">{selectedStudent.studentId}</span>
+                    <span className="font-mono font-bold text-slate-800">
+                      {selectedStudent.studentId || (selectedStudent.uid ? selectedStudent.uid.slice(0, 10).toUpperCase() : 'N/A')}
+                    </span>
                     <button
-                      onClick={() => copyToClipboard(selectedStudent.studentId || '')}
+                      onClick={() => copyToClipboard(selectedStudent.studentId || selectedStudent.uid || '')}
                       className="p-1 rounded text-slate-400 hover:text-slate-600 hover:bg-slate-200 cursor-pointer"
                       title="Copy Matriculation Number"
                     >
@@ -403,7 +404,7 @@ export default function StudentsDirectoryPage() {
             {/* Modal Actions */}
             <div className="pt-4 border-t border-slate-100 flex items-center justify-between">
               <span className="text-xs text-slate-400">
-                Registered in BioAir Biology Assessment System
+                Registered in AceByCraft Continuous Assessment Platform
               </span>
 
               <button

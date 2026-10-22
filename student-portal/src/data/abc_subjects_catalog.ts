@@ -1380,10 +1380,20 @@ export const CURRENT_WEEKLY_CYCLE: WeeklyAssessmentCycle = {
   subjectsAvailable: NIGERIAN_SUBJECTS,
 };
 
-// Client-safe questions stripper (removes correctOption and explanation)
-export function getClientSafeQuestionsForSubject(subjectKey: string) {
+// Fisher-Yates array shuffler for question randomization
+export function shuffleArray<T>(array: T[]): T[] {
+  const result = [...array];
+  for (let i = result.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [result[i], result[j]] = [result[j], result[i]];
+  }
+  return result;
+}
+
+// Client-safe questions stripper (removes correctOption and explanation, randomizes questions per attempt)
+export function getClientSafeQuestionsForSubject(subjectKey: string, randomize: boolean = true) {
   const bank = ABC_FULL_QUESTION_BANK[subjectKey] || [];
-  return bank.map((q) => ({
+  const safe = bank.map((q) => ({
     id: q.id,
     subjectKey: q.subjectKey,
     subjectName: q.subjectName,
@@ -1391,4 +1401,5 @@ export function getClientSafeQuestionsForSubject(subjectKey: string) {
     questionText: q.questionText,
     options: q.options,
   }));
+  return randomize ? shuffleArray(safe) : safe;
 }

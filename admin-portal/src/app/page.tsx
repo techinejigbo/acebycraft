@@ -3,74 +3,162 @@
 import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAdminAuth } from '@/lib/admin-auth-context';
-import { INITIAL_REGISTERED_SCHOOLS } from '@/data/abc_subjects_catalog';
 import { Mascot } from '@/components/Mascot';
+import { ShieldCheck, KeyRound } from 'lucide-react';
 
-export default function InstitutionLoginPage() {
+export default function ITUnitLoginPage() {
   const router = useRouter();
-  const { isAuthenticated, loginAsAdmin, loginAsSchool } = useAdminAuth();
-  const [type, setType] = useState<'school' | 'admin'>('school');
-  const [code, setCode] = useState(INITIAL_REGISTERED_SCHOOLS[0].code);
-  const [pass, setPass] = useState('');
+  const { isAuthenticated, isSetupNeeded, isLoading, loginAsAdmin, setupAdminPasscode } = useAdminAuth();
+  
   const [pin, setPin] = useState('');
+  const [confirmPin, setConfirmPin] = useState('');
   const [error, setError] = useState('');
+  const [submitting, setSubmitting] = useState(false);
 
   useEffect(() => {
     if (isAuthenticated) router.push('/dashboard');
   }, [isAuthenticated, router]);
 
-  const submit = (e: React.FormEvent) => {
+  const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
-    const ok = type === 'school' ? loginAsSchool(code, pass) : loginAsAdmin(pin.trim());
-    if (ok) router.push('/dashboard');
-    else setError(type === 'school' ? 'We could not verify that school.' : 'Wrong IT unit passphrase.');
+    setSubmitting(true);
+    try {
+      const result = await loginAsAdmin(pin.trim());
+      if (result.success) {
+        router.push('/dashboard');
+      } else {
+        setError(result.error || 'Invalid administrator passcode.');
+      }
+    } finally {
+      setSubmitting(false);
+    }
   };
 
+  const handleSetup = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setError('');
+
+    if (pin.trim().length < 8) {
+      setError('Master passcode must be at least 8 characters long.');
+      return;
+    }
+
+    if (pin.trim() !== confirmPin.trim()) {
+      setError('Passcodes do not match. Please verify both fields.');
+      return;
+    }
+
+    setSubmitting(true);
+    try {
+      const result = await setupAdminPasscode(pin.trim());
+      if (result.success) {
+        router.push('/dashboard');
+      } else {
+        setError(result.error || 'Failed to initialize master admin passcode.');
+      }
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  if (isLoading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <Mascot size={80} className="animate-bob" />
+      </div>
+    );
+  }
+
   return (
-    <div className="min-h-screen flex flex-col items-center justify-center px-6 py-10 gap-6">
-      <Mascot size={130} mood={error ? 'sad' : 'happy'} className="animate-bob" />
-      <h1 className="text-3xl text-center">Welcome, school leaders!</h1>
+    <div className="min-h-screen flex flex-col items-center justify-center px-4 py-8 max-w-md mx-auto text-center gap-5">
+      <div className="flex items-center gap-2">
+        <span className="text-3xl font-black tracking-tight" style={{ color: 'var(--feather)' }}>AceByCraft</span>
+        <span className="pill text-xs font-black" style={{ background: '#f1dcff', color: 'var(--beetle-shadow)' }}>IT UNIT</span>
+      </div>
 
-      <div className="w-full max-w-md flex flex-col gap-4">
-        <div className="grid grid-cols-2 gap-2">
-          <button type="button" onClick={() => setType('school')} className={`card card-select text-center !p-3 ${type === 'school' ? 'selected' : ''}`}>🏫 School</button>
-          <button type="button" onClick={() => setType('admin')} className={`card card-select text-center !p-3 ${type === 'admin' ? 'selected' : ''}`}>🛠️ IT unit</button>
-        </div>
+      <Mascot size={120} mood={error ? 'sad' : isSetupNeeded ? 'cheer' : 'wink'} className="animate-bob" />
 
-        {error && <div className="card card-red text-sm animate-shake" style={{ color: 'var(--cardinal-shadow)' }}>{error}</div>}
+      <div className="space-y-1">
+        <h1 className="text-2xl sm:text-3xl font-black text-[var(--eel)]">
+          {isSetupNeeded ? 'Initialize Administrator Passcode' : 'IT Command & National Admin'}
+        </h1>
+        <p className="text-sm text-[var(--wolf)]">
+          {isSetupNeeded
+            ? 'Create a secure master administrator passcode for system access.'
+            : 'Manage weekly assessment cycles, approve volunteer teacher questions, and publish the Sunday night broadcast report.'}
+        </p>
+      </div>
 
-        <form onSubmit={submit} className="flex flex-col gap-4">
-          {type === 'school' ? (
-            <>
-              <div>
-                <label className="label">Your school</label>
-                <select className="input" value={code} onChange={(e) => setCode(e.target.value)}>
-                  {INITIAL_REGISTERED_SCHOOLS.map((s) => (
-                    <option key={s.id} value={s.code}>{s.name} ({s.code})</option>
-                  ))}
-                </select>
-              </div>
-              <div>
-                <label className="label">Access passcode</label>
-                <input className="input" type="password" placeholder="Passcode" value={pass} onChange={(e) => setPass(e.target.value)} />
-              </div>
-              <p className="text-sm text-[var(--wolf)]">🔒 Schools only see their own students&apos; results.</p>
-            </>
-          ) : (
-            <div>
-              <label className="label">IT unit passphrase</label>
-              <input className="input" type="password" required placeholder="Passphrase" value={pin} onChange={(e) => setPin(e.target.value)} />
+      <div className="card w-full text-left p-5 shadow-sm">
+        {error && (
+          <div className="card card-red text-sm mb-4 animate-shake" style={{ color: 'var(--cardinal-shadow)' }}>
+            {error}
+          </div>
+        )}
+
+        {isSetupNeeded ? (
+          <form onSubmit={handleSetup} className="flex flex-col gap-4">
+            <div className="card card-blue text-xs flex items-start gap-2">
+              <KeyRound className="w-4 h-4 shrink-0 text-[var(--macaw)] mt-0.5" />
+              <span>
+                Please create your master administrator passcode to initialize the system.
+              </span>
             </div>
-          )}
-          <button className="btn btn-block">Log in</button>
-        </form>
 
-        <div className="flex gap-2 justify-center text-sm font-black uppercase tracking-wider text-[var(--macaw)]">
-          <button type="button" className="cursor-pointer" onClick={() => { loginAsSchool('ABC-LAG-001'); router.push('/dashboard'); }}>Demo: King&apos;s College</button>
-          <span className="text-[var(--hare)]">·</span>
-          <button type="button" className="cursor-pointer" onClick={() => { loginAsAdmin('abc-admin-2026'); router.push('/dashboard'); }}>Demo: IT unit</button>
-        </div>
+            <div>
+              <label className="label">Create Master Administrator Passcode</label>
+              <input
+                className="input font-mono"
+                type="password"
+                required
+                placeholder="At least 8 characters"
+                value={pin}
+                onChange={(e) => setPin(e.target.value)}
+              />
+            </div>
+
+            <div>
+              <label className="label">Confirm Master Passcode</label>
+              <input
+                className="input font-mono"
+                type="password"
+                required
+                placeholder="Re-enter master passcode"
+                value={confirmPin}
+                onChange={(e) => setConfirmPin(e.target.value)}
+              />
+            </div>
+
+            <button type="submit" className="btn btn-purple btn-block" disabled={submitting}>
+              {submitting ? 'Saving Passcode...' : 'Save Passcode & Enter Console'}
+            </button>
+          </form>
+        ) : (
+          <form onSubmit={handleLogin} className="flex flex-col gap-4">
+            <div>
+              <label className="label">National Administrator Passcode</label>
+              <input
+                className="input font-mono"
+                type="password"
+                required
+                placeholder="Enter administrator passcode"
+                value={pin}
+                onChange={(e) => setPin(e.target.value)}
+              />
+            </div>
+            <button type="submit" className="btn btn-purple btn-block" disabled={submitting}>
+              {submitting ? 'Verifying Credentials...' : 'Enter IT Command Console'}
+            </button>
+          </form>
+        )}
+      </div>
+
+      <div className="flex items-center gap-2 text-xs text-[var(--wolf)] max-w-sm">
+        <ShieldCheck className="w-4 h-4 text-[var(--feather)] flex-shrink-0" />
+        <span>
+          Restricted access for authorized personnel only.
+        </span>
       </div>
     </div>
   );

@@ -1,126 +1,145 @@
 'use client';
 
 import React, { createContext, useContext, useState, useEffect } from 'react';
-import { INITIAL_REGISTERED_SCHOOLS } from '@/data/abc_subjects_catalog';
-import { SchoolProfile } from '@/types';
-
-export type AdminRole = 'admin' | 'school';
 
 interface AdminAuthContextType {
   isAuthenticated: boolean;
-  role: AdminRole;
-  activeSchool: {
-    id: string;
-    name: string;
-    code: string;
-    state: string;
-    lga: string;
-  } | null;
-  loginAsAdmin: (passphrase: string) => boolean;
-  loginAsSchool: (schoolCodeOrId: string, password?: string) => boolean;
-  logout: () => void;
+  loginAsAdmin: (passphrase: string) => Promise<{ success: boolean; error?: string }>;
+  setupAdminPasscode: (passphrase: string) => Promise<{ success: boolean; error?: string }>;
+  changePasscode: (currentPass: string, newPass: string) => Promise<{ success: boolean; error?: string }>;
+  logout: () => Promise<void>;
   isLoading: boolean;
-  // Legacy compatibility getters
+  isSetupNeeded: boolean;
+  // Compatibility getters
   isAdminAuthenticated: boolean;
-  logoutAdmin: () => void;
-  loginAdmin: (passphrase: string) => boolean;
+  logoutAdmin: () => Promise<void>;
+  loginAdmin: (passphrase: string) => Promise<{ success: boolean; error?: string }>;
 }
 
 const AdminAuthContext = createContext<AdminAuthContextType>({
   isAuthenticated: false,
-  role: 'admin',
-  activeSchool: null,
-  loginAsAdmin: () => false,
-  loginAsSchool: () => false,
-  logout: () => {},
+  loginAsAdmin: async () => ({ success: false }),
+  setupAdminPasscode: async () => ({ success: false }),
+  changePasscode: async () => ({ success: false }),
+  logout: async () => {},
   isLoading: true,
+  isSetupNeeded: false,
   isAdminAuthenticated: false,
-  logoutAdmin: () => {},
-  loginAdmin: () => false,
+  logoutAdmin: async () => {},
+  loginAdmin: async () => ({ success: false }),
 });
-
-const AUTH_STORAGE_KEY = 'abc_admin_auth_session';
 
 export function AdminAuthProvider({ children }: { children: React.ReactNode }) {
   const [isAuthenticated, setIsAuthenticated] = useState<boolean>(false);
-  const [role, setRole] = useState<AdminRole>('admin');
-  const [activeSchool, setActiveSchool] = useState<{
-    id: string;
-    name: string;
-    code: string;
-    state: string;
-    lga: string;
-  } | null>(null);
+  const [isSetupNeeded, setIsSetupNeeded] = useState<boolean>(false);
   const [isLoading, setIsLoading] = useState<boolean>(true);
 
-  useEffect(() => {
+  const checkSession = async () => {
     try {
-      const stored = localStorage.getItem(AUTH_STORAGE_KEY);
-      if (stored) {
-        const parsed = JSON.parse(stored);
-        if (parsed.authenticated) {
-          setIsAuthenticated(true);
-          setRole(parsed.role || 'admin');
-          setActiveSchool(parsed.school || null);
-        }
+      const res = await fetch('/api/auth');
+      if (res.ok) {
+        const data = await res.json();
+        setIsAuthenticated(Boolean(data.authenticated));
+        setIsSetupNeeded(Boolean(data.isSetupNeeded));
+      } else {
+        setIsAuthenticated(false);
       }
-    } catch (e) {
-      console.warn('Error reading admin auth token:', e);
+    } catch {
+      setIsAuthenticated(false);
     } finally {
       setIsLoading(false);
     }
+  };
+
+  useEffect(() => {
+    checkSession();
   }, []);
 
-  const loginAsAdmin = (passphrase: string): boolean => {
-    if (
-      passphrase === 'abc-admin-2026' || 
-      passphrase === 'admin123' || 
-      passphrase === 'bioair-admin-2026'
-    ) {
-      const session = { authenticated: true, role: 'admin' as AdminRole, school: null };
-      localStorage.setItem(AUTH_STORAGE_KEY, JSON.stringify(session));
-      setIsAuthenticated(true);
-      setRole('admin');
-      setActiveSchool(null);
-      return true;
+  const loginAsAdmin = async (passphrase: string): Promise<{ success: boolean; error?: string }> => {
+    try {
+      const res = await fetch('/api/auth', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ passphrase }),
+      });
+
+      const data = await res.json();
+      if (res.ok && data.success) {
+        setIsAuthenticated(true);
+        setIsSetupNeeded(false);
+        return { success: true };
+      }
+      return { success: false, error: data.error || 'Authentication failed' };
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : 'Network error';
+      return { success: false, error: msg };
     }
-    return false;
   };
 
-  const loginAsSchool = (schoolCodeOrId: string, password?: string): boolean => {
-    const school = INITIAL_REGISTERED_SCHOOLS.find(
-      (s) => s.code.toLowerCase() === schoolCodeOrId.toLowerCase() || s.id === schoolCodeOrId
-    );
+  const setupAdminPasscode = async (passphrase: string): Promise<{ success: boolean; error?: string }> => {
+    try {
+      const res = await fetch('/api/auth', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action: 'setup', passphrase }),
+      });
 
-    if (school) {
-      const session = { authenticated: true, role: 'school' as AdminRole, school };
-      localStorage.setItem(AUTH_STORAGE_KEY, JSON.stringify(session));
-      setIsAuthenticated(true);
-      setRole('school');
-      setActiveSchool(school);
-      return true;
+      const data = await res.json();
+      if (res.ok && data.success) {
+        setIsAuthenticated(true);
+        setIsSetupNeeded(false);
+        return { success: true };
+      }
+      return { success: false, error: data.error || 'Setup failed' };
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : 'Network error';
+      return { success: false, error: msg };
     }
-    return false;
   };
 
-  const logout = () => {
-    localStorage.removeItem(AUTH_STORAGE_KEY);
-    setIsAuthenticated(false);
-    setRole('admin');
-    setActiveSchool(null);
+  const changePasscode = async (currentPassphrase: string, newPassphrase: string): Promise<{ success: boolean; error?: string }> => {
+    try {
+      const res = await fetch('/api/auth', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          action: 'change-passcode',
+          currentPassphrase,
+          newPassphrase,
+        }),
+      });
+
+      const data = await res.json();
+      if (res.ok && data.success) {
+        return { success: true };
+      }
+      return { success: false, error: data.error || 'Passcode change failed' };
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : 'Network error';
+      return { success: false, error: msg };
+    }
+  };
+
+  const logout = async () => {
+    try {
+      await fetch('/api/auth', { method: 'DELETE' });
+    } catch {
+      // Ignore
+    } finally {
+      setIsAuthenticated(false);
+    }
   };
 
   return (
     <AdminAuthContext.Provider
       value={{
         isAuthenticated,
-        role,
-        activeSchool,
         loginAsAdmin,
-        loginAsSchool,
+        setupAdminPasscode,
+        changePasscode,
         logout,
         isLoading,
-        // Legacy
+        isSetupNeeded,
         isAdminAuthenticated: isAuthenticated,
         logoutAdmin: logout,
         loginAdmin: loginAsAdmin,

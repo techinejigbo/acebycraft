@@ -3,7 +3,7 @@
 import React, { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth, DEFAULT_9_SUBJECTS } from '@/lib/auth-context';
-import { NIGERIAN_SUBJECTS, CURRENT_WEEKLY_CYCLE } from '@/data/abc_subjects_catalog';
+import { CURRENT_WEEKLY_CYCLE } from '@/data/abc_subjects_catalog';
 import { SubmissionResult } from '@/types';
 import { Mascot } from '@/components/Mascot';
 import { Check, Star, Lock, X, BookOpen, Trophy, User } from 'lucide-react';
@@ -20,6 +20,16 @@ export default function DashboardPage() {
   const [review, setReview] = useState<SubmissionResult | null>(null);
   const [picker, setPicker] = useState(false);
   const [temp, setTemp] = useState<string[]>([]);
+  const [liveSubjects, setLiveSubjects] = useState<{ id: string; name: string; shortCode?: string }[]>([]);
+
+  useEffect(() => {
+    fetch('/api/subjects')
+      .then((r) => r.json())
+      .then((d) => {
+        if (d.success && d.subjects) setLiveSubjects(d.subjects);
+      })
+      .catch(() => {});
+  }, []);
 
   useEffect(() => {
     if (!isLoading && !student) router.push('/');
@@ -27,19 +37,19 @@ export default function DashboardPage() {
 
   useEffect(() => {
     if (!student) return;
-    setTemp(student.preferredSubjects || DEFAULT_9_SUBJECTS);
+    setTemp(student.preferredSubjects || []);
     (async () => {
       try {
         const res = await fetch(`/api/submissions?userId=${encodeURIComponent(student.uid)}`);
         if (res.ok) {
           const d = await res.json();
-          if (d.submissions?.length) { setSubs(d.submissions); return; }
+          setSubs(Array.isArray(d.submissions) ? d.submissions : []);
+        } else {
+          setSubs([]);
         }
-      } catch {}
-      try {
-        const local = JSON.parse(localStorage.getItem('abc_past_submissions') || '[]');
-        setSubs(local.filter((s: SubmissionResult) => s.userId === student.uid));
-      } catch {}
+      } catch {
+        setSubs([]);
+      }
     })();
   }, [student]);
 
@@ -47,7 +57,22 @@ export default function DashboardPage() {
     return <div className="flex-1 flex items-center justify-center p-12"><Mascot size={90} className="animate-bob" /></div>;
   }
 
-  const mySubjects = student.preferredSubjects?.length === 9 ? student.preferredSubjects : DEFAULT_9_SUBJECTS;
+  // Only subjects fetched live from the database
+  const allAvailableSubjects = liveSubjects;
+  const targetSubjectCount = Math.min(9, allAvailableSubjects.length);
+
+  const getSubjectName = (id: string) => {
+    const found = allAvailableSubjects.find((s) => s.id === id);
+    return found ? found.name : id;
+  };
+
+  // Only show subjects that actually exist in the live database
+  const liveSubjectIds = new Set(liveSubjects.map((s) => s.id));
+  const validPreferred = (student.preferredSubjects || []).filter((id) => liveSubjectIds.has(id));
+  const mySubjects = validPreferred.length > 0
+    ? validPreferred
+    : (liveSubjects.length > 0 ? liveSubjects.slice(0, targetSubjectCount).map((s) => s.id) : []);
+
   const current = subs.find((s) => s.cycleId === CURRENT_WEEKLY_CYCLE.id) || null;
   const latest = subs[0] || null;
   const offsets = [0, 52, 84, 52, 0, -52, -84, -52, 0];
@@ -57,7 +82,7 @@ export default function DashboardPage() {
   const weaknesses = results.slice(-3).reverse();
 
   const saveSubjects = async () => {
-    if (temp.length !== 9) return;
+    if (temp.length !== targetSubjectCount) return;
     await updatePreferredSubjects(temp);
     setPicker(false);
   };
@@ -93,44 +118,61 @@ export default function DashboardPage() {
             <div className="rounded-2xl p-5 flex items-center justify-between gap-4" style={{ background: 'var(--feather)', borderBottom: '5px solid var(--feather-shadow)' }}>
               <div className="text-white">
                 <div className="text-xs font-black uppercase tracking-widest opacity-80">Week {CURRENT_WEEKLY_CYCLE.cycleNumber} · closes Sunday 11:59 PM</div>
-                <h1 className="text-xl sm:text-2xl !text-white">Hi {student.displayName.split(' ')[0]}! Ready for 9 subjects?</h1>
-                <p className="text-sm opacity-90 mt-1">Score 80%+ and finish fast to win ₦{CURRENT_WEEKLY_CYCLE.rewardConfig.amountNgn.toLocaleString()} airtime.</p>
+                <h1 className="text-xl sm:text-2xl !text-white">
+                  {mySubjects.length > 0 ? `Hi ${student.displayName.split(' ')[0]}! Ready for ${mySubjects.length} subject${mySubjects.length === 1 ? '' : 's'}?` : `Hi ${student.displayName.split(' ')[0]}! Welcome to your learning space`}
+                </h1>
+                <p className="text-sm opacity-90 mt-1">
+                  {mySubjects.length > 0
+                    ? `Score 80%+ and finish fast to win ₦${CURRENT_WEEKLY_CYCLE.rewardConfig.amountNgn.toLocaleString()} airtime.`
+                    : 'Curriculum subjects are currently being configured by the platform administrator.'}
+                </p>
               </div>
               <Mascot size={90} mood="cheer" className="hidden sm:block shrink-0" />
             </div>
 
             {/* Path */}
-            <div className="flex flex-col items-center gap-6 py-2">
-              {mySubjects.map((id, i) => {
-                const meta = NIGERIAN_SUBJECTS.find((s) => s.id === id);
-                const done = !!current;
-                return (
-                  <div key={id} className="relative flex flex-col items-center" style={{ transform: `translateX(${offsets[i]}px)` }}>
-                    {i === 0 && !done && (
-                      <div className="absolute -top-11 px-4 py-2 rounded-xl bg-white border-2 border-[var(--swan)] text-[var(--feather)] font-black uppercase text-sm animate-bob">
-                        Start
-                      </div>
-                    )}
-                    <button
-                      className={`node ${done ? 'done' : ''}`}
-                      onClick={() => !done && router.push(`/assessment/${CURRENT_WEEKLY_CYCLE.id}`)}
-                      title={meta?.name}
-                    >
-                      {done ? <Check className="w-9 h-9" strokeWidth={4} /> : <Star className="w-9 h-9" fill="#fff" />}
-                    </button>
-                    <span className="mt-4 text-sm font-black text-[var(--wolf)]">{meta?.name}</span>
-                  </div>
-                );
-              })}
-              <div className="node locked mt-2" title="Sunday results"><Trophy className="w-9 h-9" /></div>
-              <span className="text-sm font-black text-[var(--hare)]">Sunday night results</span>
-            </div>
+            {mySubjects.length === 0 ? (
+              <div className="card text-center p-8 flex flex-col items-center gap-3 w-full max-w-md mx-auto my-4">
+                <Mascot size={80} mood="happy" />
+                <h3 className="text-lg font-black">No Active Curriculum Subjects</h3>
+                <p className="text-sm text-[var(--wolf)]">
+                  The administrator has not published curriculum subjects yet. When subjects are added in the admin console, your personalized learning path will appear here!
+                </p>
+              </div>
+            ) : (
+              <div className="flex flex-col items-center gap-6 py-2">
+                {mySubjects.map((id, i) => {
+                  const subName = getSubjectName(id);
+                  const done = !!current;
+                  return (
+                    <div key={id} className="relative flex flex-col items-center" style={{ transform: `translateX(${offsets[i % offsets.length]}px)` }}>
+                      {i === 0 && !done && (
+                        <div className="absolute -top-11 px-4 py-2 rounded-xl bg-white border-2 border-[var(--swan)] text-[var(--feather)] font-black uppercase text-sm animate-bob">
+                          Start
+                        </div>
+                      )}
+                      <button
+                        className={`node ${done ? 'done' : ''}`}
+                        onClick={() => !done && router.push(`/assessment/${CURRENT_WEEKLY_CYCLE.id}`)}
+                        title={subName}
+                      >
+                        {done ? <Check className="w-9 h-9" strokeWidth={4} /> : <Star className="w-9 h-9" fill="#fff" />}
+                      </button>
+                      <span className="mt-4 text-sm font-black text-[var(--wolf)]">{subName}</span>
+                    </div>
+                  );
+                })}
+                <div className="node locked mt-2" title="Sunday results"><Trophy className="w-9 h-9" /></div>
+                <span className="text-sm font-black text-[var(--hare)]">Sunday night results</span>
+              </div>
+            )}
 
-            {!current ? (
+            {!current && mySubjects.length > 0 && (
               <button className="btn btn-block sm:w-80 sm:self-center" onClick={() => router.push(`/assessment/${CURRENT_WEEKLY_CYCLE.id}`)}>
                 Start assessment
               </button>
-            ) : (
+            )}
+            {current && (
               <div className="card card-green text-center font-black">✅ You completed this week&apos;s assessment. Results come out Sunday night!</div>
             )}
 
@@ -257,16 +299,22 @@ export default function DashboardPage() {
             </div>
             <div className="card">
               <div className="flex items-center justify-between mb-3">
-                <h3 className="text-lg">My 9 subjects</h3>
-                <button className="btn btn-outline !py-2" onClick={() => setPicker(true)}>Edit</button>
+                <h3 className="text-lg">My subjects ({mySubjects.length})</h3>
+                {allAvailableSubjects.length > 0 && (
+                  <button className="btn btn-outline !py-2" onClick={() => setPicker(true)}>Edit</button>
+                )}
               </div>
-              <div className="flex flex-wrap gap-2">
-                {mySubjects.map((id) => (
-                  <span key={id} className="pill" style={{ background: '#ddf4ff', color: 'var(--macaw-shadow)' }}>
-                    {NIGERIAN_SUBJECTS.find((s) => s.id === id)?.name}
-                  </span>
-                ))}
-              </div>
+              {mySubjects.length === 0 ? (
+                <p className="text-sm text-[var(--wolf)]">No subjects selected yet.</p>
+              ) : (
+                <div className="flex flex-wrap gap-2">
+                  {mySubjects.map((id) => (
+                    <span key={id} className="pill" style={{ background: '#ddf4ff', color: 'var(--macaw-shadow)' }}>
+                      {getSubjectName(id)}
+                    </span>
+                  ))}
+                </div>
+              )}
             </div>
           </div>
         )}
@@ -277,24 +325,30 @@ export default function DashboardPage() {
         <div className="fixed inset-0 z-50 bg-black/50 flex items-end sm:items-center justify-center">
           <div className="bg-white w-full sm:max-w-xl rounded-t-3xl sm:rounded-3xl p-6 animate-slide-up max-h-[90vh] overflow-y-auto">
             <div className="flex items-center justify-between mb-4">
-              <h3 className="text-xl">Choose your 9 subjects ({temp.length}/9)</h3>
+              <h3 className="text-xl">Choose your subjects ({temp.length}/{targetSubjectCount})</h3>
               <button onClick={() => setPicker(false)} className="cursor-pointer"><X /></button>
             </div>
-            <div className="grid grid-cols-2 gap-3 mb-4">
-              {NIGERIAN_SUBJECTS.map((s) => {
-                const on = temp.includes(s.id);
-                return (
-                  <button
-                    key={s.id}
-                    className={`card card-select ${on ? 'selected' : ''}`}
-                    onClick={() => setTemp(on ? temp.filter((x) => x !== s.id) : temp.length < 9 ? [...temp, s.id] : temp)}
-                  >
-                    {s.name}
-                  </button>
-                );
-              })}
-            </div>
-            <button className="btn btn-block" disabled={temp.length !== 9} onClick={saveSubjects}>Save</button>
+            {allAvailableSubjects.length === 0 ? (
+              <div className="text-center py-8 text-[var(--wolf)]">
+                No curriculum subjects have been published by the administrator yet.
+              </div>
+            ) : (
+              <div className="grid grid-cols-2 gap-3 mb-4">
+                {allAvailableSubjects.map((s) => {
+                  const on = temp.includes(s.id);
+                  return (
+                    <button
+                      key={s.id}
+                      className={`card card-select ${on ? 'selected' : ''}`}
+                      onClick={() => setTemp(on ? temp.filter((x) => x !== s.id) : temp.length < targetSubjectCount ? [...temp, s.id] : temp)}
+                    >
+                      {s.name}
+                    </button>
+                  );
+                })}
+              </div>
+            )}
+            <button className="btn btn-block" disabled={targetSubjectCount === 0 || temp.length !== targetSubjectCount} onClick={saveSubjects}>Save</button>
           </div>
         </div>
       )}

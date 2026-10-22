@@ -2,7 +2,14 @@
 
 import React, { createContext, useContext, useEffect, useState, useCallback } from 'react';
 import { StudentProfile } from '@/types';
-import { auth, db, isFirebaseConfigured } from '@/lib/firebase/client';
+import { 
+  auth, 
+  db, 
+  isFirebaseConfigured, 
+  RecaptchaVerifier, 
+  signInWithPhoneNumber, 
+  type ConfirmationResult 
+} from '@/lib/firebase/client';
 import { onAuthStateChanged, signOut as fbSignOut } from 'firebase/auth';
 import { doc, getDoc, setDoc } from 'firebase/firestore';
 
@@ -24,8 +31,16 @@ interface AuthContextType {
     whatsappConsent: boolean;
     preferredSubjects: string[];
   }) => Promise<{ success: boolean; error?: string }>;
-  requestPasswordOtp: (phone: string) => Promise<{ success: boolean; otp?: string; error?: string }>;
-  verifyOtpAndResetPassword: (phone: string, otp: string, newPass: string) => Promise<{ success: boolean; error?: string }>;
+  requestPasswordOtp: (
+    phone: string, 
+    recaptchaVerifier?: RecaptchaVerifier
+  ) => Promise<{ success: boolean; confirmationResult?: ConfirmationResult; otp?: string; error?: string }>;
+  verifyOtpAndResetPassword: (
+    phone: string, 
+    otp: string, 
+    newPass: string, 
+    confirmationResult?: ConfirmationResult | null
+  ) => Promise<{ success: boolean; error?: string }>;
   refreshStudentProfile: () => Promise<void>;
 }
 
@@ -43,32 +58,21 @@ const AuthContext = createContext<AuthContextType>({
 });
 
 const STORAGE_KEY = 'abc_student_session';
-const REGISTERED_USERS_KEY = 'abc_registered_users_db';
 const OTP_STORE_KEY = 'abc_active_otps';
 
-// Standard 9 default subjects for a Nigerian student if not specified
-export const DEFAULT_9_SUBJECTS = [
-  'math',
-  'english',
-  'biology',
-  'chemistry',
-  'physics',
-  'economics',
-  'civic',
-  'agric',
-  'government',
-];
+// Dynamic default subjects (starts empty from zero master data)
+export const DEFAULT_9_SUBJECTS: string[] = [];
 
 // Helper to normalize Nigerian phone number
 export function normalizePhone(raw: string): string {
-  const cleaned = raw.replace(/\D/g, '');
+  const cleaned = (raw || '').replace(/\D/g, '');
   if (cleaned.startsWith('0') && cleaned.length === 11) {
     return `+234${cleaned.slice(1)}`;
   }
   if (cleaned.startsWith('234') && cleaned.length >= 13) {
     return `+${cleaned}`;
   }
-  if (raw.startsWith('+')) {
+  if (raw && raw.startsWith('+')) {
     return raw;
   }
   return `+234${cleaned}`;
@@ -78,63 +82,47 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [student, setStudent] = useState<StudentProfile | null>(null);
   const [isLoading, setIsLoading] = useState<boolean>(true);
 
-  // Initialize from localStorage or Firebase
+  // Initialize and verify against Firestore database
   useEffect(() => {
+    // Clean up any legacy localStorage mock DB
     try {
-      const saved = localStorage.getItem(STORAGE_KEY);
-      if (saved) {
-        const parsed = JSON.parse(saved);
-        if (parsed?.uid) {
-          setStudent(parsed);
-        }
-      }
-    } catch (err) {
-      console.warn('Error reading saved student session:', err);
-    } finally {
-      setIsLoading(false);
-    }
+      localStorage.removeItem('abc_registered_users_db');
+    } catch {}
 
-    if (isFirebaseConfigured() && auth) {
-      const unsubscribe = onAuthStateChanged(auth, async (firebaseUser) => {
-        if (firebaseUser) {
-          const profile = await fetchFromFirestore(firebaseUser.uid);
-          if (profile) {
-            setStudent(profile);
-            localStorage.setItem(STORAGE_KEY, JSON.stringify(profile));
+    async function initSession() {
+      try {
+        const saved = localStorage.getItem(STORAGE_KEY);
+        if (saved) {
+          const parsed = JSON.parse(saved);
+          if (parsed?.uid) {
+            // Verify with Firestore database via /api/auth
+            try {
+              const res = await fetch(`/api/auth?uid=${encodeURIComponent(parsed.uid)}`);
+              const data = await res.json();
+              if (data.success && data.user) {
+                setStudent(data.user);
+                localStorage.setItem(STORAGE_KEY, JSON.stringify(data.user));
+              } else {
+                // User does not exist in the database! Clear phantom session.
+                console.warn('Session user not found in Firestore. Clearing session.');
+                localStorage.removeItem(STORAGE_KEY);
+                setStudent(null);
+              }
+            } catch (netErr) {
+              // Network offline - keep cached session
+              setStudent(parsed);
+            }
           }
         }
-      });
-      return () => unsubscribe();
-    }
-  }, []);
-
-  const fetchFromFirestore = async (uid: string): Promise<StudentProfile | null> => {
-    if (!db) return null;
-    try {
-      const snap = await getDoc(doc(db, 'users', uid));
-      if (snap.exists()) {
-        const d = snap.data();
-        return {
-          uid,
-          phone: d.phone || '',
-          displayName: d.displayName || d.fullName || 'ABC Student',
-          schoolId: d.schoolId || 'self',
-          schoolName: d.schoolName || 'Self (Independent Learner)',
-          schoolClass: d.schoolClass || 'SS 3',
-          network: d.network || 'MTN',
-          whatsappConsent: Boolean(d.whatsappConsent),
-          preferredSubjects: d.preferredSubjects?.length === 9 ? d.preferredSubjects : DEFAULT_9_SUBJECTS,
-          totalAssessmentsTaken: d.totalAssessmentsTaken || 0,
-          totalAirtimeWonNgn: d.totalAirtimeWonNgn || 0,
-          averageScorePercentage: d.averageScorePercentage || 0,
-          createdAt: d.createdAt || new Date().toISOString(),
-        };
+      } catch (err) {
+        console.warn('Error reading saved student session:', err);
+      } finally {
+        setIsLoading(false);
       }
-    } catch (err) {
-      console.warn('Firestore user fetch note:', err);
     }
-    return null;
-  };
+
+    initSession();
+  }, []);
 
   const saveStudentProfile = async (updates: Partial<StudentProfile>) => {
     if (!student) return;
@@ -146,27 +134,20 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     setStudent(merged);
     localStorage.setItem(STORAGE_KEY, JSON.stringify(merged));
 
-    // Also update in registered users db
     try {
-      const dbStr = localStorage.getItem(REGISTERED_USERS_KEY);
-      const userList: any[] = dbStr ? JSON.parse(dbStr) : [];
-      const idx = userList.findIndex((u) => u.uid === student.uid || u.phone === student.phone);
-      if (idx !== -1) {
-        userList[idx] = { ...userList[idx], ...merged };
-      } else {
-        userList.push(merged);
+      if (updates.preferredSubjects) {
+        await fetch('/api/auth', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            action: 'update-subjects',
+            uid: student.uid,
+            preferredSubjects: updates.preferredSubjects,
+          }),
+        });
       }
-      localStorage.setItem(REGISTERED_USERS_KEY, JSON.stringify(userList));
-    } catch (e) {
-      console.warn('Failed to update local user db:', e);
-    }
-
-    if (isFirebaseConfigured() && db && student.uid) {
-      try {
-        await setDoc(doc(db, 'users', student.uid), merged, { merge: true });
-      } catch (err) {
-        console.warn('Firestore profile sync note:', err);
-      }
+    } catch (err) {
+      console.warn('Failed to sync profile update to server:', err);
     }
   };
 
@@ -186,151 +167,158 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     preferredSubjects: string[];
   }): Promise<{ success: boolean; error?: string }> => {
     try {
-      const formattedPhone = normalizePhone(data.phone);
-
-      // Check existing accounts in local storage DB
-      const dbStr = localStorage.getItem(REGISTERED_USERS_KEY);
-      const userList: any[] = dbStr ? JSON.parse(dbStr) : [];
-      const exists = userList.find((u) => normalizePhone(u.phone) === formattedPhone);
-
-      if (exists) {
-        return { success: false, error: 'A student account with this phone number already exists. Please log in.' };
-      }
-
-      const uid = 'student_' + Math.random().toString(36).substring(2, 9) + Date.now().toString(36);
-      const newProfile: StudentProfile = {
-        uid,
-        phone: formattedPhone,
-        displayName: data.fullName.trim(),
-        schoolId: data.schoolId || 'self',
-        schoolName: data.schoolName || 'Self (Independent Learner)',
-        schoolClass: data.schoolClass || 'SS 3',
-        network: data.network || 'MTN',
-        whatsappConsent: data.whatsappConsent,
-        preferredSubjects: data.preferredSubjects.length === 9 ? data.preferredSubjects : DEFAULT_9_SUBJECTS,
-        totalAssessmentsTaken: 0,
-        totalAirtimeWonNgn: 0,
-        averageScorePercentage: 0,
-        createdAt: new Date().toISOString(),
-      };
-
-      // Store with password hash/record
-      userList.push({
-        ...newProfile,
-        password: data.pass,
+      const res = await fetch('/api/auth', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          action: 'register',
+          fullName: data.fullName,
+          phone: data.phone,
+          pass: data.pass,
+          schoolId: data.schoolId,
+          schoolName: data.schoolName,
+          schoolClass: data.schoolClass,
+          network: data.network,
+          whatsappConsent: data.whatsappConsent,
+          preferredSubjects: data.preferredSubjects,
+        }),
       });
-      localStorage.setItem(REGISTERED_USERS_KEY, JSON.stringify(userList));
 
-      // Set active session
-      setStudent(newProfile);
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(newProfile));
-
-      // Sync with Firestore if available
-      if (isFirebaseConfigured() && db) {
-        try {
-          await setDoc(doc(db, 'users', uid), newProfile, { merge: true });
-        } catch (fErr) {
-          console.warn('Firestore registration sync note:', fErr);
-        }
+      const result = await res.json();
+      if (!res.ok || !result.success) {
+        return { success: false, error: result.error || 'Registration failed' };
       }
 
+      setStudent(result.user);
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(result.user));
       return { success: true };
     } catch (err: any) {
-      return { success: false, error: err?.message || 'Registration failed. Please check your inputs.' };
+      return { success: false, error: err?.message || 'Registration failed. Check network connection.' };
     }
   };
 
   const loginWithPhoneAndPass = async (phone: string, pass: string): Promise<{ success: boolean; error?: string }> => {
     try {
-      const formattedPhone = normalizePhone(phone);
-      const dbStr = localStorage.getItem(REGISTERED_USERS_KEY);
-      const userList: any[] = dbStr ? JSON.parse(dbStr) : [];
-      const matched = userList.find(
-        (u) => normalizePhone(u.phone) === formattedPhone && u.password === pass
-      );
+      const res = await fetch('/api/auth', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          action: 'login',
+          phone,
+          pass,
+        }),
+      });
 
-      if (matched) {
-        const studentProfile: StudentProfile = {
-          uid: matched.uid,
-          phone: matched.phone,
-          displayName: matched.displayName || matched.fullName,
-          schoolId: matched.schoolId || 'self',
-          schoolName: matched.schoolName || 'Self (Independent Learner)',
-          schoolClass: matched.schoolClass || 'SS 3',
-          network: matched.network || 'MTN',
-          whatsappConsent: Boolean(matched.whatsappConsent),
-          preferredSubjects: matched.preferredSubjects?.length === 9 ? matched.preferredSubjects : DEFAULT_9_SUBJECTS,
-          totalAssessmentsTaken: matched.totalAssessmentsTaken || 0,
-          totalAirtimeWonNgn: matched.totalAirtimeWonNgn || 0,
-          averageScorePercentage: matched.averageScorePercentage || 0,
-          createdAt: matched.createdAt,
-        };
-        setStudent(studentProfile);
-        localStorage.setItem(STORAGE_KEY, JSON.stringify(studentProfile));
-        return { success: true };
+      const result = await res.json();
+      if (!res.ok || !result.success) {
+        return { success: false, error: result.error || 'Invalid phone number or password' };
       }
 
-      return { success: false, error: 'Incorrect phone number or password. Please verify and try again.' };
+      setStudent(result.user);
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(result.user));
+      return { success: true };
     } catch (err: any) {
-      return { success: false, error: 'Login service encountered an issue.' };
+      return { success: false, error: 'Login service encountered an issue. Check connection.' };
     }
   };
 
-  const requestPasswordOtp = async (phone: string): Promise<{ success: boolean; otp?: string; error?: string }> => {
-    const formattedPhone = normalizePhone(phone);
-    const dbStr = localStorage.getItem(REGISTERED_USERS_KEY);
-    const userList: any[] = dbStr ? JSON.parse(dbStr) : [];
-    const matched = userList.find((u) => normalizePhone(u.phone) === formattedPhone);
+  const requestPasswordOtp = async (
+    phone: string,
+    recaptchaVerifier?: RecaptchaVerifier
+  ): Promise<{ success: boolean; confirmationResult?: ConfirmationResult; otp?: string; error?: string }> => {
+    try {
+      const formattedPhone = normalizePhone(phone);
+      const res = await fetch(`/api/auth?phone=${encodeURIComponent(formattedPhone)}`);
+      const data = await res.json();
 
-    if (!matched) {
-      return { success: false, error: 'No registered student account found with this phone number.' };
+      if (!data.success || !data.exists) {
+        return { success: false, error: 'No registered student account found with this phone number.' };
+      }
+
+      // If Firebase Auth is configured and recaptchaVerifier is passed, send genuine SMS OTP via Firebase Phone Auth
+      if (isFirebaseConfigured() && auth && recaptchaVerifier) {
+        try {
+          const confirmation = await signInWithPhoneNumber(auth, formattedPhone, recaptchaVerifier);
+          return { success: true, confirmationResult: confirmation };
+        } catch (fbErr: any) {
+          console.warn('[Firebase Phone Auth] SMS send error:', fbErr);
+          if (fbErr?.code === 'auth/quota-exceeded') {
+            return { success: false, error: 'Daily SMS quota reached. Please contact support or try again later.' };
+          }
+          if (fbErr?.code === 'auth/invalid-phone-number') {
+            return { success: false, error: 'Invalid phone number format. Please ensure correct Nigerian format (+234...).' };
+          }
+          return { success: false, error: fbErr?.message || 'Could not send SMS verification code.' };
+        }
+      }
+
+      // Fallback for local development or demo without live SMS credentials
+      const generatedOtp = Math.floor(100000 + Math.random() * 900000).toString();
+      const otpStore: Record<string, { otp: string; expiresAt: number }> = JSON.parse(
+        localStorage.getItem(OTP_STORE_KEY) || '{}'
+      );
+      otpStore[formattedPhone] = {
+        otp: generatedOtp,
+        expiresAt: Date.now() + 10 * 60 * 1000,
+      };
+      localStorage.setItem(OTP_STORE_KEY, JSON.stringify(otpStore));
+
+      return { success: true, otp: generatedOtp };
+    } catch (e: any) {
+      return { success: false, error: 'Could not send verification code' };
     }
-
-    // Generate 6-digit OTP
-    const generatedOtp = Math.floor(100000 + Math.random() * 900000).toString();
-    const otpStore: Record<string, { otp: string; expiresAt: number }> = JSON.parse(
-      localStorage.getItem(OTP_STORE_KEY) || '{}'
-    );
-    otpStore[formattedPhone] = {
-      otp: generatedOtp,
-      expiresAt: Date.now() + 10 * 60 * 1000, // 10 minutes
-    };
-    localStorage.setItem(OTP_STORE_KEY, JSON.stringify(otpStore));
-
-    return { success: true, otp: generatedOtp };
   };
 
   const verifyOtpAndResetPassword = async (
     phone: string,
     otp: string,
-    newPass: string
+    newPass: string,
+    confirmationResult?: ConfirmationResult | null
   ): Promise<{ success: boolean; error?: string }> => {
-    const formattedPhone = normalizePhone(phone);
-    const otpStore: Record<string, { otp: string; expiresAt: number }> = JSON.parse(
-      localStorage.getItem(OTP_STORE_KEY) || '{}'
-    );
-    const entry = otpStore[formattedPhone];
+    try {
+      const formattedPhone = normalizePhone(phone);
+      let firebaseIdToken: string | undefined;
 
-    if (!entry || entry.otp !== otp.trim()) {
-      return { success: false, error: 'Invalid or expired OTP verification code.' };
-    }
-    if (Date.now() > entry.expiresAt) {
-      return { success: false, error: 'The OTP has expired. Please request a new code.' };
-    }
+      if (confirmationResult) {
+        // Authenticate with Firebase using the SMS OTP
+        const userCredential = await confirmationResult.confirm(otp.trim());
+        firebaseIdToken = await userCredential.user.getIdToken();
+      } else {
+        // Local fallback verification
+        const otpStore: Record<string, { otp: string; expiresAt: number }> = JSON.parse(
+          localStorage.getItem(OTP_STORE_KEY) || '{}'
+        );
+        const entry = otpStore[formattedPhone];
+        if (!entry || entry.otp !== otp.trim()) {
+          return { success: false, error: 'Invalid or expired OTP verification code.' };
+        }
+        if (Date.now() > entry.expiresAt) {
+          return { success: false, error: 'The OTP has expired. Please request a new code.' };
+        }
+        delete otpStore[formattedPhone];
+        localStorage.setItem(OTP_STORE_KEY, JSON.stringify(otpStore));
+      }
 
-    // Update password in local DB
-    const dbStr = localStorage.getItem(REGISTERED_USERS_KEY);
-    const userList: any[] = dbStr ? JSON.parse(dbStr) : [];
-    const idx = userList.findIndex((u) => normalizePhone(u.phone) === formattedPhone);
-    if (idx !== -1) {
-      userList[idx].password = newPass;
-      localStorage.setItem(REGISTERED_USERS_KEY, JSON.stringify(userList));
-      delete otpStore[formattedPhone];
-      localStorage.setItem(OTP_STORE_KEY, JSON.stringify(otpStore));
+      const res = await fetch('/api/auth', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          action: 'reset-password',
+          phone,
+          newPass,
+          firebaseIdToken,
+        }),
+      });
+
+      const data = await res.json();
+      if (!res.ok || !data.success) {
+        return { success: false, error: data.error || 'Could not update password' };
+      }
+
       return { success: true };
+    } catch (e: any) {
+      return { success: false, error: e?.message || 'Failed to reset password.' };
     }
-
-    return { success: false, error: 'Account record could not be updated.' };
   };
 
   const logout = () => {

@@ -1,9 +1,23 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { fetchAllAssessments, saveAssessmentWithLockedKey, toggleAssessmentStatus } from '@/lib/firebase/admin';
+import { fetchAllAssessments, fetchAssessmentWithSecretKey, saveAssessmentWithLockedKey, toggleAssessmentStatus } from '@/lib/firebase/admin';
+import { isAuthenticatedAdmin } from '@/lib/auth-check';
 import { AssessmentForm } from '@/types';
 
-export async function GET() {
+export async function GET(req: NextRequest) {
+  if (!(await isAuthenticatedAdmin())) {
+    return NextResponse.json({ error: 'Unauthorized. Admin session required.' }, { status: 401 });
+  }
+
   try {
+    const id = req.nextUrl.searchParams.get('id');
+    if (id) {
+      const assessment = await fetchAssessmentWithSecretKey(id);
+      if (!assessment) {
+        return NextResponse.json({ error: 'Assessment not found' }, { status: 404 });
+      }
+      return NextResponse.json({ assessment });
+    }
+
     const assessments = await fetchAllAssessments();
     return NextResponse.json({ assessments });
   } catch (error: unknown) {
@@ -13,6 +27,10 @@ export async function GET() {
 }
 
 export async function POST(req: NextRequest) {
+  if (!(await isAuthenticatedAdmin())) {
+    return NextResponse.json({ error: 'Unauthorized. Admin session required.' }, { status: 401 });
+  }
+
   try {
     const body: AssessmentForm = await req.json();
 
@@ -36,6 +54,10 @@ export async function POST(req: NextRequest) {
 }
 
 export async function PATCH(req: NextRequest) {
+  if (!(await isAuthenticatedAdmin())) {
+    return NextResponse.json({ error: 'Unauthorized. Admin session required.' }, { status: 401 });
+  }
+
   try {
     const { id, isActive } = await req.json();
     if (!id || typeof isActive !== 'boolean') {

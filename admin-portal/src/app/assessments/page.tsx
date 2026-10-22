@@ -13,7 +13,7 @@ import {
   Calendar, 
   CheckCircle2, 
   XCircle, 
-  Dna, 
+  BookOpen, 
   ArrowRight,
   Sparkles,
   ToggleLeft,
@@ -101,7 +101,7 @@ export default function AdminAssessmentsPage() {
         <div>
           <h1 className="text-2xl sm:text-3xl font-black text-slate-900 flex items-center space-x-2">
             <FileQuestion className="w-7 h-7 text-emerald-600" />
-            <span>Biology Assessment Manager</span>
+            <span>Assessment Management</span>
           </h1>
           <p className="text-sm text-slate-500 mt-1">
             Create weekly continuous assessment quizzes, schedule testing windows, and author secure question banks
@@ -118,83 +118,97 @@ export default function AdminAssessmentsPage() {
       </div>
 
       {/* Assessment Cards Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        {assessments.map((a) => {
-          const isToggling = togglingId === a.id;
+      {loading ? (
+        <div className="flex justify-center p-12">
+          <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-emerald-600" />
+        </div>
+      ) : assessments.length === 0 ? (
+        <div className="bg-white border border-slate-200 rounded-3xl p-12 text-center text-slate-500 shadow-xs max-w-lg mx-auto">
+          <BookOpen className="w-12 h-12 text-slate-300 mx-auto mb-3" />
+          <h2 className="font-bold text-base text-slate-800">No Assessments Created Yet</h2>
+          <p className="text-xs text-slate-500 mt-1">
+            Click &quot;Author New Quiz&quot; above to create weekly continuous assessment quizzes across your registered curriculum subjects.
+          </p>
+        </div>
+      ) : (
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          {assessments.map((a) => {
+            const isToggling = togglingId === a.id;
 
-          return (
-            <div
-              key={a.id}
-              className={`bg-white border rounded-3xl p-6 flex flex-col justify-between space-y-4 hover:shadow-md transition-all shadow-sm ${
-                a.isActive ? 'border-emerald-200' : 'border-slate-200 opacity-90'
-              }`}
-            >
-              <div className="space-y-3">
-                <div className="flex items-center justify-between">
-                  {/* 1-Click Toggle Active Switch */}
+            return (
+              <div
+                key={a.id}
+                className={`bg-white border rounded-3xl p-6 flex flex-col justify-between space-y-4 hover:shadow-md transition-all shadow-sm ${
+                  a.isActive ? 'border-emerald-200' : 'border-slate-200 opacity-90'
+                }`}
+              >
+                <div className="space-y-3">
+                  <div className="flex items-center justify-between">
+                    {/* 1-Click Toggle Active Switch */}
+                    <button
+                      onClick={() => a.id && handleToggleStatus(a.id, a.isActive)}
+                      disabled={isToggling}
+                      className={`inline-flex items-center space-x-1.5 px-3 py-1 rounded-full text-xs font-bold border transition-all cursor-pointer ${
+                        a.isActive 
+                          ? 'bg-emerald-100 text-emerald-800 border-emerald-300 hover:bg-emerald-200' 
+                          : 'bg-slate-100 text-slate-600 border-slate-300 hover:bg-slate-200'
+                      }`}
+                      title="Click to toggle quiz active/closed status"
+                    >
+                      <Power className={`w-3.5 h-3.5 ${a.isActive ? 'text-emerald-700' : 'text-slate-400'}`} />
+                      <span>{isToggling ? 'Updating...' : a.isActive ? 'Active (Live)' : 'Closed (Draft)'}</span>
+                    </button>
+
+                    <span className="text-xs text-slate-500 font-mono font-medium">
+                      {a.subject || 'Curriculum'}
+                    </span>
+                  </div>
+
+                  <h2 className="text-lg font-black text-slate-900 line-clamp-2">
+                    {a.title}
+                  </h2>
+
+                  <p className="text-xs text-slate-600 line-clamp-3 leading-relaxed">
+                    {a.description}
+                  </p>
+
+                  <div className="grid grid-cols-2 gap-2 text-xs pt-2">
+                    <div className="p-2 rounded-xl bg-slate-50 border border-slate-200 flex items-center space-x-1.5 text-slate-700 font-medium">
+                      <Clock className="w-3.5 h-3.5 text-emerald-600" />
+                      <span>{a.durationMinutes} Minutes</span>
+                    </div>
+                    <div className="p-2 rounded-xl bg-slate-50 border border-slate-200 flex items-center space-x-1.5 text-slate-700 font-medium">
+                      <BookOpen className="w-3.5 h-3.5 text-teal-600" />
+                      <span>{a.classLevel || 'Senior Sec'}</span>
+                    </div>
+                  </div>
+
+                  <div className="p-3 rounded-2xl bg-amber-50 border border-amber-200 text-xs text-amber-900 flex items-center space-x-2">
+                    <Zap className="w-4 h-4 text-amber-600 flex-shrink-0" />
+                    <span>
+                      Airtime: <strong>₦{a.rewardConfig?.amountNgn || 200}</strong> (Score &ge;{a.rewardConfig?.minPercentage || 80}%)
+                    </span>
+                  </div>
+                </div>
+
+                <div className="pt-4 border-t border-slate-100 flex items-center justify-between">
+                  <span className="text-xs text-slate-500 font-medium">
+                    Weekend Window: Sat-Sun
+                  </span>
+
                   <button
-                    onClick={() => a.id && handleToggleStatus(a.id, a.isActive)}
-                    disabled={isToggling}
-                    className={`inline-flex items-center space-x-1.5 px-3 py-1 rounded-full text-xs font-bold border transition-all cursor-pointer ${
-                      a.isActive 
-                        ? 'bg-emerald-100 text-emerald-800 border-emerald-300 hover:bg-emerald-200' 
-                        : 'bg-slate-100 text-slate-600 border-slate-300 hover:bg-slate-200'
-                    }`}
-                    title="Click to toggle quiz active/closed status"
+                    onClick={() => router.push(`/assessments/new?edit=${a.id}`)}
+                    className="text-xs font-bold text-emerald-700 hover:text-emerald-800 inline-flex items-center space-x-1 cursor-pointer"
                   >
-                    <Power className={`w-3.5 h-3.5 ${a.isActive ? 'text-emerald-700' : 'text-slate-400'}`} />
-                    <span>{isToggling ? 'Updating...' : a.isActive ? 'Active (Live)' : 'Closed (Draft)'}</span>
+                    <span>Edit / View</span>
+                    <ArrowRight className="w-3.5 h-3.5" />
                   </button>
-
-                  <span className="text-xs text-slate-500 font-mono font-medium">
-                    {a.subject || 'Biology'}
-                  </span>
-                </div>
-
-                <h2 className="text-lg font-black text-slate-900 line-clamp-2">
-                  {a.title}
-                </h2>
-
-                <p className="text-xs text-slate-600 line-clamp-3 leading-relaxed">
-                  {a.description}
-                </p>
-
-                <div className="grid grid-cols-2 gap-2 text-xs pt-2">
-                  <div className="p-2 rounded-xl bg-slate-50 border border-slate-200 flex items-center space-x-1.5 text-slate-700 font-medium">
-                    <Clock className="w-3.5 h-3.5 text-emerald-600" />
-                    <span>{a.durationMinutes} Minutes</span>
-                  </div>
-                  <div className="p-2 rounded-xl bg-slate-50 border border-slate-200 flex items-center space-x-1.5 text-slate-700 font-medium">
-                    <Dna className="w-3.5 h-3.5 text-teal-600" />
-                    <span>{a.classLevel || 'Senior Sec'}</span>
-                  </div>
-                </div>
-
-                <div className="p-3 rounded-2xl bg-amber-50 border border-amber-200 text-xs text-amber-900 flex items-center space-x-2">
-                  <Zap className="w-4 h-4 text-amber-600 flex-shrink-0" />
-                  <span>
-                    Airtime: <strong>₦{a.rewardConfig?.amountNgn || 200}</strong> (Score &ge;{a.rewardConfig?.minPercentage || 80}%)
-                  </span>
                 </div>
               </div>
-
-              <div className="pt-4 border-t border-slate-100 flex items-center justify-between">
-                <span className="text-xs text-slate-500 font-medium">
-                  Weekend Window: Sat-Sun
-                </span>
-
-                <button
-                  onClick={() => router.push(`/assessments/new?edit=${a.id}`)}
-                  className="text-xs font-bold text-emerald-700 hover:text-emerald-800 inline-flex items-center space-x-1 cursor-pointer"
-                >
-                  <span>Edit / View</span>
-                  <ArrowRight className="w-3.5 h-3.5" />
-                </button>
-              </div>
-            </div>
-          );
-        })}
-      </div>
+            );
+          })}
+        </div>
+      )}
 
     </div>
   );

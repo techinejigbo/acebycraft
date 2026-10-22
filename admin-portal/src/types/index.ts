@@ -10,6 +10,38 @@ export interface SubjectMeta {
   description: string;
 }
 
+export interface MasterSubject {
+  id: string;
+  name: string;
+  shortCode: string;
+  category: string;
+  description: string;
+  createdAt: string;
+}
+
+export interface MasterSchool {
+  id: string;
+  name: string;
+  code: string;
+  passcode: string;
+  state: string;
+  lga: string;
+  contactEmail?: string;
+  contactPhone?: string;
+  createdAt: string;
+}
+
+export interface MasterTeacher {
+  id: string;
+  name: string;
+  phone: string;
+  pass: string;
+  affiliation: string;
+  primarySubject: string;
+  status: 'active' | 'suspended';
+  createdAt: string;
+}
+
 export interface SchoolProfile {
   uid: string;
   role: 'school';
@@ -140,7 +172,6 @@ export interface AirtimeTxRow {
   amountNgn: number;
   status: 'success' | 'failed' | 'sandbox_simulated' | 'pending';
   airtimeTxId?: string;
-  reloadlyTxId?: string;
   timestamp: string;
   message?: string;
 }
@@ -195,16 +226,21 @@ export interface SundayWeeklyReport {
 
 export interface TeacherContribution {
   id: string;
+  authorId?: string;
   authorName: string;
   authorPhone: string;
+  authorAffiliation?: string;
   authorSchool?: string;
-  subjectKey: string;
+  subjectId?: string;
+  subjectKey?: string;
   subjectName: string;
   topic: string;
-  questionText: string;
+  questionText?: string;
+  question?: string;
   options: { A: string; B: string; C: string; D: string };
   correctOption: OptionKey;
   explanation: string;
-  status: 'pending' | 'approved' | 'rejected';
+  status: 'pending' | 'approved' | 'rejected' | 'revision';
   submittedAt: string;
+  reviewedAt?: string;
 }

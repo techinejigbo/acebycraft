@@ -185,7 +185,6 @@ export interface SubmissionResult {
   correctCount?: number;
   caPointsEarned?: number;
   tabSwitchesCount?: number;
-  reloadlyTxId?: string;
   explanations?: Record<string, {
     selected: OptionKey | null;
     correct: OptionKey;

@@ -1,6 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getAdminFirestore } from '@/lib/firebase/admin';
-import { CURRENT_WEEKLY_CYCLE, NIGERIAN_SUBJECTS } from '@/data/abc_subjects_catalog';
 
 export async function GET(req: NextRequest) {
   try {
@@ -8,35 +7,81 @@ export async function GET(req: NextRequest) {
     const cycleId = searchParams.get('id');
 
     const firestore = getAdminFirestore();
+    let masterSubjects: any[] = [];
 
-    if (cycleId) {
-      if (firestore) {
-        try {
-          const doc = await firestore.collection('assessments').doc(cycleId).get();
-          if (doc.exists) {
-            return NextResponse.json({
-              cycle: { id: doc.id, ...doc.data() },
-              subjects: NIGERIAN_SUBJECTS,
-            });
-          }
-        } catch (err) {
-          console.warn('Firestore cycle query notice:', err);
+    if (firestore) {
+      try {
+        const subSnap = await firestore.collection('subjects').orderBy('createdAt', 'desc').get();
+        if (!subSnap.empty) {
+          masterSubjects = subSnap.docs.map((d) => {
+            const data = d.data();
+            return {
+              id: d.id,
+              name: data.name,
+              shortCode: data.shortCode || data.name.slice(0, 3).toUpperCase(),
+              category: data.category || 'General',
+              description: data.description || '',
+              ...data,
+            };
+          });
         }
+      } catch (e) {
+        console.warn('Could not read master subjects for assessments:', e);
       }
+    }
 
-      return NextResponse.json({
-        cycle: CURRENT_WEEKLY_CYCLE,
-        subjects: NIGERIAN_SUBJECTS,
-      });
+    if (cycleId && firestore) {
+      const doc = await firestore.collection('assessments').doc(cycleId).get();
+      if (doc.exists) {
+        const qSnap = await firestore
+          .collection('assessments')
+          .doc(cycleId)
+          .collection('questions')
+          .get();
+
+        const questions = qSnap.docs.map((qd) => {
+          const qData = qd.data();
+          return {
+            id: qd.id,
+            questionText: qData.question || qData.questionText || '',
+            topic: qData.topic || 'General Topic',
+            options: qData.options || {},
+          };
+        });
+
+        return NextResponse.json({
+          cycle: {
+            id: doc.id,
+            ...doc.data(),
+            questions,
+          },
+          subjects: masterSubjects,
+        });
+      }
+    }
+
+    // List all active assessments in Firestore
+    let activeAssessments: any[] = [];
+    if (firestore) {
+      const assessSnap = await firestore
+        .collection('assessments')
+        .where('isActive', '==', true)
+        .get();
+
+      activeAssessments = assessSnap.docs.map((d) => ({
+        id: d.id,
+        ...d.data(),
+      }));
     }
 
     return NextResponse.json({
-      activeCycle: CURRENT_WEEKLY_CYCLE,
-      subjects: NIGERIAN_SUBJECTS,
+      activeAssessments,
+      activeCycle: activeAssessments[0] || null,
+      subjects: masterSubjects,
     });
   } catch (error: any) {
     return NextResponse.json(
-      { error: error?.message || 'Failed to fetch assessment cycle.' },
+      { error: error?.message || 'Failed to fetch assessments.' },
       { status: 500 }
     );
   }

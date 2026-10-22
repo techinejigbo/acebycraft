@@ -1,91 +1,43 @@
-# BioAir: Biology Continuous Assessment & Automated Airtime Reward Platform 🧬📱
+# AceByCraft (ABC Nigeria) — Weekly Continuous Assessment Platform
 
-An automated platform designed for biology educators to host weekly continuous assessment (CA) quizzes on weekends and instantly credit top-performing students with mobile airtime rewards via **Reloadly**.
-
----
-
-## 🌟 Key Features
-
-### 🎓 Student Portal (`/student-portal`)
-- **Verified Mobile Login**: Firebase Phone Authentication ensures airtime is sent directly to the student's verified device.
-- **Weekend-Only Assessment Window**: Smart timer locks assessments outside the configured weekend testing window.
-- **Anti-Cheat Engine**:
-  - Live visibility detection (`document.hidden` / tab-switch strikes).
-  - Copy/paste lockout on question content.
-  - Strict countdown timer with automatic force-submission on zero.
-- **Zero-Trust Client Security**: Question options never expose correct answers in client payloads or DOM. Grading occurs exclusively on the Next.js serverless backend.
-- **Instant CA Grade & Airtime Modal**: Instant calculation of continuous assessment scores + automatic mobile airtime disbursement via Reloadly.
-
-### 🛡️ Admin Command Dashboard (`/admin-portal`)
-- **Assessment Management**: Create, schedule, activate/deactivate weekly biology quizzes.
-- **Question Authoring & Secure Answer Keys**: Add questions with topic tags, choices A-D, and correct answers. Correct answers are automatically stored in the secure `answerKeys` collection that clients cannot read.
-- **Bulk Import**: Upload biology quizzes instantly using JSON or CSV format.
-- **Student Registry & CA Export**: View registered students, cumulative CA marks, and export official grade sheets to CSV for school records.
-- **Airtime Transaction Log**: Monitor Reloadly airtime delivery status, sandbox balance, and trigger manual re-attempts if a student's network fails.
+A multi-subject weekly continuous assessment (CA) platform for Nigerian secondary school students. Students take a timed weekly assessment across their chosen subjects. Students who reach the score benchmark compete for airtime rewards ranked by completion speed. **Airtime is disbursed manually** by the platform administrator.
 
 ---
 
-## 🏗️ Architecture & Security
+## Portals
 
-```
-bio/
-├── student-portal/            # Student assessment Next.js app
-│   ├── src/app/
-│   │   ├── page.tsx           # Landing & login entry
-│   │   ├── dashboard/         # CA scores, weekend quiz list
-│   │   ├── assessment/[id]/   # Quiz engine (anti-cheat, timer)
-│   │   └── api/grade-quiz/    # Serverless grading & Reloadly airtime dispatch
-│   └── ...
-├── admin-portal/              # Instructor dashboard Next.js app
-│   ├── src/app/
-│   │   ├── dashboard/         # Metrics, student list, CA export
-│   │   ├── assessments/       # Quiz creator & question authoring
-│   │   ├── airtime/           # Reloadly monitor & transactions
-│   │   └── api/               # Admin privileged API endpoints
-│   └── ...
-├── firestore.rules            # Production-grade Firestore lockdown
-├── sample_biology_assessments.json # 10 curated biology questions
-└── README.md
+| Portal | Folder | Who uses it | Purpose |
+| --- | --- | --- | --- |
+| Student | `student-portal/` | Students | Sign up, pick subjects, take the weekly assessment, review feedback and rewards |
+| Admin | `admin-portal/` | Platform administrator | Manage subjects, schools, teachers, assessments, students, and the airtime ledger |
+| School | `school-portal/` | Registered schools | View their own students' results and frequently missed questions |
+| Teacher | `teacher-portal/` | Volunteer educators | Contribute questions for administrator review |
+
+All four are separate Next.js apps that share one Firebase project. Server-side API routes use the Firebase Admin SDK.
+
+---
+
+## Setup
+
+### 1. Firebase
+1. Create a Firebase project and a Firestore database (production mode).
+2. Publish the rules in `firestore.rules` (Firestore → Rules).
+3. Project Settings → Service Accounts → **Generate New Private Key**.
+4. Put the key JSON into `FIREBASE_SERVICE_ACCOUNT_KEY`.
+
+### 2. Environment variables
+Copy `.env.example` to `.env` inside each portal folder and fill in the Firebase values.
+
+### 3. Run locally
+```bash
+cd student-portal && npm run dev            # http://localhost:3000
+cd admin-portal   && npm run dev -- -p 3001 # http://localhost:3001
+cd school-portal  && npm run dev -- -p 3002 # http://localhost:3002
+cd teacher-portal && npm run dev -- -p 3003 # http://localhost:3003
 ```
 
 ---
 
-## 🚀 Setup & Installation
+## Airtime rewards
 
-### Step 1: Firebase Project Setup (Free Spark Tier)
-1. Go to [Firebase Console](https://console.firebase.google.com/) and create a project (e.g. `bio-ca-airtime`).
-2. **Authentication**: Enable **Phone** provider (or Email/Password for testing).
-3. **Firestore Database**: Create database in production mode.
-4. **Deploy Security Rules**: Copy the contents of `firestore.rules` into Firebase Console > Firestore Database > Rules > Publish.
-5. **Generate Service Account**:
-   - Go to Project Settings > **Service Accounts**.
-   - Click **Generate New Private Key** (downloads a `.json` file).
-   - This powers the serverless backend (`FIREBASE_SERVICE_ACCOUNT_KEY`).
-
-### Step 2: Reloadly Account Setup (Airtime Provider)
-1. Register for a free developer account at [Reloadly](https://www.reloadly.com/).
-2. In the Reloadly Dashboard, switch to **Sandbox Mode** for free testing.
-3. Go to **Developers > API Settings** and copy:
-   - `Client ID`
-   - `Client Secret`
-4. Sandbox test phone numbers receive simulated top-ups without spending real money.
-
-### Step 3: Environment Variables
-Create `.env.local` inside `student-portal/` and `admin-portal/` based on the `.env.example` templates provided in each directory.
-
----
-
-## 🧪 Testing the Platform
-
-1. **Start the Student Portal**:
-   ```bash
-   cd student-portal
-   npm run dev
-   # Opens on http://localhost:3000
-   ```
-2. **Start the Admin Portal**:
-   ```bash
-   cd admin-portal
-   npm run dev -- -p 3001
-   # Opens on http://localhost:3001
-   ```
+Rewards are not sent automatically. After each weekly cycle closes, the administrator reviews the qualifying students in the admin portal, sends airtime manually, and records each payment.

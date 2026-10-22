@@ -1,7 +1,7 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
-import { useRouter } from 'next/navigation';
+import React, { useState, useEffect, Suspense } from 'react';
+import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import { useAdminAuth } from '@/lib/admin-auth-context';
 import { AssessmentForm, QuestionData, OptionKey } from '@/types';
@@ -19,13 +19,18 @@ import {
   AlertCircle
 } from 'lucide-react';
 
-export default function NewAssessmentPage() {
+function AssessmentFormContent() {
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const editId = searchParams.get('edit');
   const { isAdminAuthenticated, isLoading } = useAdminAuth();
+
+  const [isEditing, setIsEditing] = useState(false);
+  const [isLoadingAssessment, setIsLoadingAssessment] = useState(false);
 
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
-  const [subject, setSubject] = useState('Biology');
+  const [subject, setSubject] = useState('');
   const [classLevel, setClassLevel] = useState('Senior Secondary 3');
   const [durationMinutes, setDurationMinutes] = useState(15);
   const [isActive, setIsActive] = useState(true);
@@ -40,32 +45,20 @@ export default function NewAssessmentPage() {
   const [questions, setQuestions] = useState<QuestionData[]>([
     {
       id: 'q1',
-      question: 'Which enzyme is responsible for unwinding the DNA double helix during replication?',
-      topic: 'Molecular Genetics',
+      question: '',
+      topic: '',
       options: {
-        A: 'DNA Polymerase',
-        B: 'Helicase',
-        C: 'RNA Primase',
-        D: 'Ligase',
+        A: '',
+        B: '',
+        C: '',
+        D: '',
       },
-      correctOption: 'B',
-      explanation: 'DNA Helicase breaks the hydrogen bonds between base pairs to unwind the double helix at the replication fork.',
-    },
-    {
-      id: 'q2',
-      question: 'Which organelle contains digestive enzymes that degrade old cellular organelles and foreign pathogens?',
-      topic: 'Cell Biology',
-      options: {
-        A: 'Ribosome',
-        B: 'Lysosome',
-        C: 'Centriole',
-        D: 'Vacuole',
-      },
-      correctOption: 'B',
-      explanation: 'Lysosomes are membrane-bound vesicles filled with hydrolytic enzymes designed for intracellular digestion.',
+      correctOption: 'A',
+      explanation: '',
     },
   ]);
 
+  const [availableSubjects, setAvailableSubjects] = useState<any[]>([]);
   const [showBulkModal, setShowBulkModal] = useState(false);
   const [bulkInput, setBulkInput] = useState('');
   const [bulkError, setBulkError] = useState('');
@@ -77,6 +70,81 @@ export default function NewAssessmentPage() {
     }
   }, [isLoading, isAdminAuthenticated, router]);
 
+  useEffect(() => {
+    if (isAdminAuthenticated) {
+      fetch('/api/subjects')
+        .then((res) => res.json())
+        .then((data) => {
+          if (data.success && Array.isArray(data.subjects) && data.subjects.length > 0) {
+            setAvailableSubjects(data.subjects);
+            if (!editId) {
+              setSubject(data.subjects[0].name);
+            }
+          }
+        })
+        .catch((err) => console.warn('Could not load subjects:', err));
+    }
+  }, [isAdminAuthenticated, editId]);
+
+  useEffect(() => {
+    if (editId && isAdminAuthenticated) {
+      setIsEditing(true);
+      setIsLoadingAssessment(true);
+      fetch(`/api/assessments?id=${encodeURIComponent(editId)}`)
+        .then((res) => {
+          if (!res.ok) throw new Error('Failed to load assessment');
+          return res.json();
+        })
+        .then((data) => {
+          const a = data.assessment;
+          if (a) {
+            setTitle(a.title || '');
+            setDescription(a.description || '');
+            if (a.subject) setSubject(a.subject);
+            if (a.classLevel) setClassLevel(a.classLevel);
+            if (a.durationMinutes) setDurationMinutes(a.durationMinutes);
+            setIsActive(a.isActive ?? true);
+            setIsWeekendOnly(a.isWeekendOnly ?? true);
+            if (a.startTime) {
+              try {
+                setStartTime(new Date(a.startTime).toISOString().slice(0, 16));
+              } catch {}
+            }
+            if (a.endTime) {
+              try {
+                setEndTime(new Date(a.endTime).toISOString().slice(0, 16));
+              } catch {}
+            }
+            if (a.rewardConfig) {
+              setAirtimeEnabled(a.rewardConfig.airtimeEnabled ?? true);
+              setMinPercentage(a.rewardConfig.minPercentage ?? 80);
+              setAmountNgn(a.rewardConfig.amountNgn ?? 200);
+            }
+            if (Array.isArray(a.questions) && a.questions.length > 0) {
+              setQuestions(a.questions);
+            }
+          }
+        })
+        .catch((err) => {
+          console.error('Failed to load assessment for edit:', err);
+          alert('Could not load assessment details for editing.');
+        })
+        .finally(() => setIsLoadingAssessment(false));
+    }
+  }, [editId, isAdminAuthenticated]);
+
+  const handleBatchTenQuestions = () => {
+    const batch: QuestionData[] = Array.from({ length: 10 }, (_, i) => ({
+      id: `q${i + 1}`,
+      question: '',
+      topic: '',
+      options: { A: '', B: '', C: '', D: '' },
+      correctOption: 'A',
+      explanation: '',
+    }));
+    setQuestions(batch);
+  };
+
   const handleAddQuestion = () => {
     const nextId = `q${questions.length + 1}`;
     setQuestions((prev) => [
@@ -84,7 +152,7 @@ export default function NewAssessmentPage() {
       {
         id: nextId,
         question: '',
-        topic: 'General Biology',
+        topic: '',
         options: { A: '', B: '', C: '', D: '' },
         correctOption: 'A',
         explanation: '',
@@ -131,7 +199,7 @@ export default function NewAssessmentPage() {
         return {
           id: item.id || `q_${Date.now()}_${idx + 1}`,
           question: item.question,
-          topic: item.topic || 'General Biology',
+          topic: item.topic || 'General Curriculum',
           options: {
             A: item.options.A || '',
             B: item.options.B || '',
@@ -146,7 +214,7 @@ export default function NewAssessmentPage() {
       setQuestions((prev) => [...prev, ...formatted]);
       setShowBulkModal(false);
       setBulkInput('');
-      alert(`Successfully imported ${formatted.length} biology questions!`);
+      alert(`Successfully imported ${formatted.length} questions!`);
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : 'Invalid JSON format.';
       setBulkError(msg);
@@ -163,6 +231,7 @@ export default function NewAssessmentPage() {
     setIsSaving(true);
     try {
       const payload: AssessmentForm = {
+        id: editId || undefined,
         title,
         description,
         subject,
@@ -191,7 +260,7 @@ export default function NewAssessmentPage() {
         throw new Error('Failed to save assessment');
       }
 
-      alert('Assessment published! Answer key securely locked down in Firestore.');
+      alert(isEditing ? 'Assessment updated successfully!' : 'Assessment published successfully!');
       router.push('/assessments');
     } catch (error) {
       console.error('Save error:', error);
@@ -201,7 +270,7 @@ export default function NewAssessmentPage() {
     }
   };
 
-  if (isLoading || !isAdminAuthenticated) {
+  if (isLoading || !isAdminAuthenticated || isLoadingAssessment) {
     return (
       <div className="flex-1 flex items-center justify-center p-8">
         <div className="animate-spin rounded-full h-10 w-10 border-t-2 border-b-2 border-emerald-600" />
@@ -239,7 +308,7 @@ export default function NewAssessmentPage() {
             className="py-2.5 px-5 rounded-2xl font-bold text-white bg-emerald-600 hover:bg-emerald-700 text-xs sm:text-sm flex items-center space-x-2 shadow-md shadow-emerald-600/30 active:scale-95 transition-all cursor-pointer"
           >
             <Save className="w-4 h-4" />
-            <span>{isSaving ? 'Publishing...' : 'Save & Lock Answer Key'}</span>
+            <span>{isSaving ? (isEditing ? 'Updating...' : 'Publishing...') : (isEditing ? 'Update Assessment & Key' : 'Save & Lock Answer Key')}</span>
           </button>
         </div>
       </div>
@@ -250,7 +319,7 @@ export default function NewAssessmentPage() {
         <div className="bg-white border border-slate-200 rounded-3xl p-6 sm:p-8 space-y-5 shadow-sm">
           <div className="flex items-center space-x-2 pb-3 border-b border-slate-100 text-sm font-extrabold text-emerald-700">
             <FileText className="w-4 h-4 text-emerald-600" />
-            <span>Assessment Overview & Schedule</span>
+            <span>{isEditing ? 'Edit Assessment Overview & Schedule' : 'Assessment Overview & Schedule'}</span>
           </div>
 
           <div className="space-y-4">
@@ -263,7 +332,7 @@ export default function NewAssessmentPage() {
                 required
                 value={title}
                 onChange={(e) => setTitle(e.target.value)}
-                placeholder="e.g. Weekend Biology CA 2: Genetics, Heredity & Variation"
+                placeholder="e.g. Continuous Assessment Quiz 1"
                 className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-2.5 text-sm text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:bg-white transition"
               />
             </div>
@@ -284,12 +353,27 @@ export default function NewAssessmentPage() {
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
               <div>
                 <label className="block text-xs font-bold text-slate-700 mb-1">Subject</label>
-                <input
-                  type="text"
-                  value={subject}
-                  onChange={(e) => setSubject(e.target.value)}
-                  className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-sm text-slate-900 font-medium"
-                />
+                {availableSubjects.length > 0 ? (
+                  <select
+                    value={subject}
+                    onChange={(e) => setSubject(e.target.value)}
+                    className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-sm text-slate-900 font-bold"
+                  >
+                    {availableSubjects.map((s) => (
+                      <option key={s.id} value={s.name}>
+                        {s.name} ({s.shortCode})
+                      </option>
+                    ))}
+                  </select>
+                ) : (
+                  <input
+                    type="text"
+                    value={subject}
+                    onChange={(e) => setSubject(e.target.value)}
+                    placeholder="e.g. Mathematics"
+                    className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-sm text-slate-900 font-medium"
+                  />
+                )}
               </div>
 
               <div>
@@ -361,11 +445,11 @@ export default function NewAssessmentPage() {
           </div>
         </div>
 
-        {/* Section 2: Automated Airtime Reward Configuration */}
+        {/* Section 2: Airtime Merit Reward Configuration */}
         <div className="bg-white border border-amber-200 rounded-3xl p-6 sm:p-8 space-y-4 shadow-sm">
           <div className="flex items-center space-x-2 pb-3 border-b border-slate-100 text-sm font-extrabold text-amber-800">
             <Sparkles className="w-4 h-4 text-amber-600" />
-            <span>Automated Airtime Incentive Configuration</span>
+            <span>Airtime Merit Reward Incentive Configuration</span>
           </div>
 
           <div className="flex items-center space-x-3 pb-2">
@@ -377,7 +461,7 @@ export default function NewAssessmentPage() {
               className="rounded border-slate-300 text-amber-600 focus:ring-amber-500"
             />
             <label htmlFor="enableAirtime" className="text-xs font-bold text-slate-900 cursor-pointer">
-              Enable Automated Airtime Reward for Top Performers
+              Enable Airtime Merit Rewards for Qualifying Students (Manual Disbursal)
             </label>
           </div>
 
@@ -425,27 +509,30 @@ export default function NewAssessmentPage() {
 
         {/* Section 3: Questions & Secure Answer Keys */}
         <div className="space-y-4">
-          <div className="flex items-center justify-between">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
             <div>
               <h2 className="text-xl font-black text-slate-900 flex items-center space-x-2">
-                <span>Biology Questions & Answer Keys</span>
+                <span>{subject || 'Assessment'} Questions & Answer Keys</span>
                 <span className="px-2.5 py-0.5 rounded-full bg-emerald-100 text-emerald-800 text-xs font-bold border border-emerald-200">
                   {questions.length} Items
                 </span>
               </h2>
               <p className="text-xs text-slate-500 mt-0.5">
-                Correct options are stored in the secure <code>/answerKeys</code> Firestore collection and never exposed to the student.
+                Correct options are securely protected and never exposed to the student.
               </p>
             </div>
 
-            <button
-              type="button"
-              onClick={handleAddQuestion}
-              className="py-2 px-3.5 rounded-xl border border-emerald-300 bg-emerald-50 hover:bg-emerald-100 text-emerald-800 text-xs font-bold flex items-center space-x-1.5 transition-colors cursor-pointer"
-            >
-              <Plus className="w-3.5 h-3.5" />
-              <span>Add Question</span>
-            </button>
+            <div className="flex items-center gap-2">
+              <button
+                type="button"
+                onClick={handleBatchTenQuestions}
+                className="py-2 px-3.5 rounded-xl border border-sky-300 bg-sky-50 hover:bg-sky-100 text-sky-800 text-xs font-bold flex items-center space-x-1.5 transition-colors cursor-pointer"
+                title="Generate 10 question cards ready for input"
+              >
+                <Sparkles className="w-3.5 h-3.5 text-sky-600" />
+                <span>Populate 10 Question Slots</span>
+              </button>
+            </div>
           </div>
 
           <div className="space-y-6">
@@ -491,7 +578,7 @@ export default function NewAssessmentPage() {
                     required
                     value={q.question}
                     onChange={(e) => updateQuestion(qIndex, 'question', e.target.value)}
-                    placeholder="Enter the biology question text here..."
+                    placeholder="Enter the question text here..."
                     className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-2 text-sm text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:bg-white"
                   />
                 </div>
@@ -539,7 +626,7 @@ export default function NewAssessmentPage() {
                       type="text"
                       value={q.explanation}
                       onChange={(e) => updateQuestion(qIndex, 'explanation', e.target.value)}
-                      placeholder="Explain the biological principle..."
+                      placeholder="Explain the solution step-by-step..."
                       className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-xs text-slate-900 placeholder-slate-400"
                     />
                   </div>
@@ -570,7 +657,7 @@ export default function NewAssessmentPage() {
             <div className="flex items-center justify-between pb-3 border-b border-slate-100">
               <h3 className="text-lg font-black text-slate-900 flex items-center space-x-2">
                 <Upload className="w-5 h-5 text-emerald-600" />
-                <span>Bulk Upload Biology Questions</span>
+                <span>Bulk Upload Questions</span>
               </h3>
               <button
                 onClick={() => setShowBulkModal(false)}
@@ -632,5 +719,19 @@ export default function NewAssessmentPage() {
       )}
 
     </div>
+  );
+}
+
+export default function NewAssessmentPage() {
+  return (
+    <Suspense
+      fallback={
+        <div className="flex-1 flex items-center justify-center p-8">
+          <div className="animate-spin rounded-full h-10 w-10 border-t-2 border-b-2 border-emerald-600" />
+        </div>
+      }
+    >
+      <AssessmentFormContent />
+    </Suspense>
   );
 }

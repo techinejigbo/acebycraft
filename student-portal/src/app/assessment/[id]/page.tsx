@@ -2,8 +2,8 @@
 
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { useParams, useRouter } from 'next/navigation';
-import { useAuth, DEFAULT_9_SUBJECTS } from '@/lib/auth-context';
-import { NIGERIAN_SUBJECTS, CURRENT_WEEKLY_CYCLE, getClientSafeQuestionsForSubject } from '@/data/abc_subjects_catalog';
+import { useAuth } from '@/lib/auth-context';
+import { CURRENT_WEEKLY_CYCLE, getClientSafeQuestionsForSubject } from '@/data/abc_subjects_catalog';
 import { OptionKey, ClientQuestion, SubmissionPayload, SubmissionResult } from '@/types';
 import { Mascot } from '@/components/Mascot';
 import confetti from 'canvas-confetti';
@@ -19,7 +19,9 @@ export default function AssessmentArenaPage() {
   const { student, isLoading } = useAuth();
   const cycleId = (params?.id as string) || CURRENT_WEEKLY_CYCLE.id;
 
-  const subjectKeys = student?.preferredSubjects?.length === 9 ? student.preferredSubjects : DEFAULT_9_SUBJECTS;
+  const subjectKeys = (student?.preferredSubjects && student.preferredSubjects.length > 0)
+    ? student.preferredSubjects
+    : [];
 
   const [si, setSi] = useState(0);
   const [qi, setQi] = useState(0);
@@ -35,6 +37,16 @@ export default function AssessmentArenaPage() {
   const [submitting, setSubmitting] = useState(false);
   const [result, setResult] = useState<SubmissionResult | null>(null);
   const [open, setOpen] = useState<string | null>(null);
+  const [liveSubjects, setLiveSubjects] = useState<{ id: string; name: string }[]>([]);
+
+  useEffect(() => {
+    fetch('/api/subjects')
+      .then((r) => r.json())
+      .then((d) => {
+        if (d.success && d.subjects) setLiveSubjects(d.subjects);
+      })
+      .catch(() => {});
+  }, []);
 
   const live = useRef({ answers, times, elapsed, strikes, flags, si });
   live.current = { answers, times, elapsed, strikes, flags, si };
@@ -52,11 +64,19 @@ export default function AssessmentArenaPage() {
     const t: Record<string, number> = {};
     subjectKeys.forEach((k) => { q[k] = getClientSafeQuestionsForSubject(k); a[k] = {}; t[k] = 0; });
     setQuestions(q); setAnswers(a); setTimes(t);
-    try {
-      const past: SubmissionResult[] = JSON.parse(localStorage.getItem('abc_past_submissions') || '[]');
-      const prev = past.find((s) => s.cycleId === cycleId && s.userId === student.uid);
-      if (prev) { submittedRef.current = true; setResult(prev); }
-    } catch {}
+    // Check existing attempt in live Firestore
+    fetch(`/api/submissions?userId=${encodeURIComponent(student.uid)}`)
+      .then((r) => r.json())
+      .then((d) => {
+        if (Array.isArray(d.submissions)) {
+          const prev = d.submissions.find((s: any) => s.cycleId === cycleId);
+          if (prev) {
+            submittedRef.current = true;
+            setResult(prev);
+          }
+        }
+      })
+      .catch(() => {});
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [student?.uid, cycleId]);
 
@@ -82,9 +102,6 @@ export default function AssessmentArenaPage() {
       const res = await fetch('/api/grade-weekly-assessment', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
       if (!res.ok) throw new Error('grading failed');
       const r: SubmissionResult = await res.json();
-      const list: SubmissionResult[] = JSON.parse(localStorage.getItem('abc_past_submissions') || '[]');
-      list.unshift(r);
-      localStorage.setItem('abc_past_submissions', JSON.stringify(list));
       setResult(r);
       if (r.averagePercentage >= 80) confetti({ particleCount: 140, spread: 80, origin: { y: 0.6 }, colors: ['#58cc02', '#1cb0f6', '#ffc800', '#ff9600'] });
     } catch {
@@ -180,7 +197,7 @@ export default function AssessmentArenaPage() {
 
   /* ====================== LESSON ====================== */
   const key = subjectKeys[si];
-  const meta = NIGERIAN_SUBJECTS.find((s) => s.id === key);
+  const subjectName = liveSubjects.find((s) => s.id === key)?.name || key;
   const qs = questions[key] || [];
   const q = qs[qi];
   if (!q) return null;
@@ -220,7 +237,7 @@ export default function AssessmentArenaPage() {
 
       <div className="flex-1 max-w-3xl mx-auto w-full px-4 pb-40 flex flex-col gap-6">
         <div className="flex items-center justify-between">
-          <span className="pill" style={{ background: '#d7ffb8', color: 'var(--feather-shadow)' }}>{meta?.name} · {qi + 1}/10</span>
+          <span className="pill" style={{ background: '#d7ffb8', color: 'var(--feather-shadow)' }}>{subjectName} · {qi + 1}/10</span>
           <button className="btn btn-outline !py-2 !px-3" onClick={() => setSheet(true)}><LayoutGrid className="w-4 h-4" /> Subjects</button>
         </div>
 
@@ -265,7 +282,7 @@ export default function AssessmentArenaPage() {
                 const n = Object.keys(answers[k] || {}).length;
                 return (
                   <button key={k} className={`card card-select flex justify-between !py-3 ${i === si ? 'selected' : ''}`} onClick={() => { setSi(i); setQi(0); setSheet(false); }}>
-                    <span>{NIGERIAN_SUBJECTS.find((s) => s.id === k)?.name}</span>
+                    <span>{liveSubjects.find((s) => s.id === k)?.name || k}</span>
                     <span className="pill" style={{ background: n === 10 ? '#d7ffb8' : '#f7f7f7', color: n === 10 ? 'var(--feather-shadow)' : 'var(--wolf)' }}>{n}/10</span>
                   </button>
                 );

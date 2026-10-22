@@ -1,18 +1,16 @@
 import { NextResponse } from 'next/server';
 import { fetchAdminMetrics } from '@/lib/firebase/admin';
-import { getAccountBalance } from '@/lib/vtpass/admin';
+import { isAuthenticatedAdmin } from '@/lib/auth-check';
 
 export async function GET() {
-  try {
-    const [metrics, balanceData] = await Promise.all([
-      fetchAdminMetrics(),
-      getAccountBalance(),
-    ]);
+  if (!(await isAuthenticatedAdmin())) {
+    return NextResponse.json({ error: 'Unauthorized. Admin session required.' }, { status: 401 });
+  }
 
+  try {
+    const metrics = await fetchAdminMetrics();
     return NextResponse.json({
       metrics,
-      airtimeGateway: balanceData,
-      reloadly: balanceData,
     });
   } catch (error: unknown) {
     const errorMsg = error instanceof Error ? error.message : 'Failed to fetch metrics';

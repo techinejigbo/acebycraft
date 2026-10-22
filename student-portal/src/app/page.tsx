@@ -3,12 +3,28 @@
 import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth, DEFAULT_9_SUBJECTS } from '@/lib/auth-context';
-import { NIGERIAN_SUBJECTS, INITIAL_REGISTERED_SCHOOLS } from '@/data/abc_subjects_catalog';
 import { Mascot } from '@/components/Mascot';
 import { ArrowLeft, X } from 'lucide-react';
+import { auth, RecaptchaVerifier, type ConfirmationResult } from '@/lib/firebase/client';
 
 type Screen = 'welcome' | 'login' | 'forgot' | 'name' | 'phone' | 'school' | 'subjects' | 'whatsapp' | 'password';
 const REG_STEPS: Screen[] = ['name', 'phone', 'school', 'subjects', 'whatsapp', 'password'];
+
+interface LiveSchool {
+  id: string;
+  name: string;
+  code?: string;
+  state?: string;
+  lga?: string;
+}
+
+interface LiveSubject {
+  id: string;
+  name: string;
+  shortCode: string;
+  category?: string;
+  description?: string;
+}
 
 export default function StudentAuthPage() {
   const router = useRouter();
@@ -24,10 +40,14 @@ export default function StudentAuthPage() {
   const [consent, setConsent] = useState(true);
   const [password, setPassword] = useState('');
 
+  const [liveSchools, setLiveSchools] = useState<LiveSchool[]>([]);
+  const [liveSubjects, setLiveSubjects] = useState<LiveSubject[]>([]);
+  const [fetchingMaster, setFetchingMaster] = useState(true);
+
   const [otpSent, setOtpSent] = useState(false);
-  const [otpHint, setOtpHint] = useState('');
   const [otp, setOtp] = useState('');
   const [newPass, setNewPass] = useState('');
+  const [confirmationResult, setConfirmationResult] = useState<ConfirmationResult | null>(null);
 
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -36,6 +56,28 @@ export default function StudentAuthPage() {
   useEffect(() => {
     if (student) router.push('/dashboard');
   }, [student, router]);
+
+  useEffect(() => {
+    async function loadMasterData() {
+      try {
+        const [schRes, subRes] = await Promise.all([
+          fetch('/api/schools').then((r) => r.json()),
+          fetch('/api/subjects').then((r) => r.json()),
+        ]);
+        if (schRes.success && schRes.schools) {
+          setLiveSchools(schRes.schools);
+        }
+        if (subRes.success && subRes.subjects) {
+          setLiveSubjects(subRes.subjects);
+        }
+      } catch (err) {
+        console.error('Failed to load live schools/subjects:', err);
+      } finally {
+        setFetchingMaster(false);
+      }
+    }
+    loadMasterData();
+  }, []);
 
   const stepIndex = REG_STEPS.indexOf(screen);
   const isReg = stepIndex >= 0;
@@ -46,11 +88,17 @@ export default function StudentAuthPage() {
     else go('welcome');
   };
 
+  const maxSelectable = liveSubjects.length > 0 ? Math.min(9, liveSubjects.length) : 9;
+
   const toggleSubject = (id: string) => {
     setError(null);
-    if (subjects.includes(id)) setSubjects(subjects.filter((s) => s !== id));
-    else if (subjects.length >= 9) setError('You can only pick 9 subjects. Tap one to remove it first.');
-    else setSubjects([...subjects, id]);
+    if (subjects.includes(id)) {
+      setSubjects(subjects.filter((s) => s !== id));
+    } else if (subjects.length >= maxSelectable) {
+      setError(`You can select up to ${maxSelectable} subject${maxSelectable === 1 ? '' : 's'}. Tap one to remove it first.`);
+    } else {
+      setSubjects([...subjects, id]);
+    }
   };
 
   const phoneValid = phone.replace(/\D/g, '').length >= 10;
@@ -58,7 +106,7 @@ export default function StudentAuthPage() {
     screen === 'name' ? fullName.trim().length >= 3
     : screen === 'phone' ? phoneValid
     : screen === 'school' ? !!schoolId
-    : screen === 'subjects' ? subjects.length === 9
+    : screen === 'subjects' ? (liveSubjects.length === 0 ? true : subjects.length === maxSelectable)
     : screen === 'whatsapp' ? true
     : screen === 'password' ? password.length >= 6
     : true;
@@ -66,12 +114,14 @@ export default function StudentAuthPage() {
   const next = async () => {
     if (screen !== 'password') { go(REG_STEPS[stepIndex + 1]); return; }
     setLoading(true);
-    const school = INITIAL_REGISTERED_SCHOOLS.find((s) => s.id === schoolId);
+    const school = liveSchools.find((s) => s.id === schoolId);
+    const selectedSchoolName = schoolId === 'self' || !school ? 'Self (Independent Learner)' : school.name;
+    const finalSubjects = subjects.length > 0 ? subjects : (liveSubjects.length > 0 ? liveSubjects.slice(0, 9).map((s) => s.id) : DEFAULT_9_SUBJECTS);
     const res = await registerStudent({
       fullName, phone, pass: password, schoolId,
-      schoolName: schoolId === 'self' || !school ? 'Self (Independent Learner)' : school.name,
+      schoolName: selectedSchoolName,
       schoolClass, network, whatsappConsent: consent,
-      preferredSubjects: subjects.length === 9 ? subjects : DEFAULT_9_SUBJECTS,
+      preferredSubjects: finalSubjects,
     });
     setLoading(false);
     if (res.success) router.push('/dashboard');
@@ -89,18 +139,48 @@ export default function StudentAuthPage() {
 
   const sendOtp = async () => {
     setLoading(true); setError(null);
-    const res = await requestPasswordOtp(phone);
+    let verifier: RecaptchaVerifier | undefined;
+    if (auth && typeof window !== 'undefined') {
+      try {
+        const existing = (window as any).recaptchaVerifier;
+        if (existing) {
+          try { existing.clear(); } catch {}
+        }
+        verifier = new RecaptchaVerifier(auth, 'recaptcha-container', {
+          size: 'invisible',
+        });
+        (window as any).recaptchaVerifier = verifier;
+      } catch (e) {
+        console.warn('Recaptcha init notice:', e);
+      }
+    }
+
+    const res = await requestPasswordOtp(phone, verifier);
     setLoading(false);
-    if (res.success && res.otp) { setOtpSent(true); setOtpHint(res.otp); setOtp(res.otp); }
-    else setError(res.error || 'Could not send OTP.');
+    if (res.success) {
+      if (res.confirmationResult) {
+        setConfirmationResult(res.confirmationResult);
+      }
+      setOtpSent(true);
+      setOtp('');
+    } else {
+      setError(res.error || 'Could not send verification code.');
+    }
   };
 
   const resetPass = async () => {
     setLoading(true); setError(null);
-    const res = await verifyOtpAndResetPassword(phone, otp, newPass);
+    const res = await verifyOtpAndResetPassword(phone, otp, newPass, confirmationResult);
     setLoading(false);
-    if (res.success) { setPassword(''); setOtpSent(false); setInfo('Password updated! Log in with your new password.'); go('login'); }
-    else setError(res.error || 'Invalid OTP.');
+    if (res.success) {
+      setPassword('');
+      setOtpSent(false);
+      setConfirmationResult(null);
+      setInfo('Password updated! Log in with your new password.');
+      go('login');
+    } else {
+      setError(res.error || 'Invalid verification code.');
+    }
   };
 
   const mascotMood = error ? 'sad' : screen === 'welcome' ? 'happy' : 'wink';
@@ -124,9 +204,6 @@ export default function StudentAuthPage() {
           <button className="btn btn-block" onClick={() => go('name')}>Get started</button>
           <button className="btn btn-outline btn-block" onClick={() => go('login')}>I already have an account</button>
         </div>
-        <a href="http://localhost:3001" target="_blank" rel="noreferrer" className="text-xs sm:text-sm font-black uppercase tracking-wider text-[var(--macaw)] hover:underline pt-0.5">
-          I&apos;m a school →
-        </a>
       </div>
     );
   }
@@ -168,10 +245,13 @@ export default function StudentAuthPage() {
                 <input className="input" type="tel" placeholder="0803 123 4567" value={phone} onChange={(e) => setPhone(e.target.value)} />
               </div>
               {!otpSent ? (
-                <button className="btn btn-block btn-blue" onClick={sendOtp} disabled={loading || !phoneValid}>Send code</button>
+                <>
+                  <button className="btn btn-block btn-blue" onClick={sendOtp} disabled={loading || !phoneValid}>Send code</button>
+                  <div id="recaptcha-container"></div>
+                </>
               ) : (
                 <>
-                  <div className="card card-blue text-sm">📱 Demo SMS: your ABC code is <b>{otpHint}</b></div>
+                  <div className="card card-blue text-sm">📱 A 6-digit code has been sent to your phone number.</div>
                   <div>
                     <label className="label">6-digit code</label>
                     <input className="input text-center tracking-[.5em] text-xl" maxLength={6} value={otp} onChange={(e) => setOtp(e.target.value)} />
@@ -195,7 +275,7 @@ export default function StudentAuthPage() {
     name: "Hi, I'm Ace! What should I call you?",
     phone: 'Your airtime prize is sent to this number — make sure it is correct!',
     school: 'Which school do you represent?',
-    subjects: 'Pick the 9 subjects you offer in school.',
+    subjects: liveSubjects.length > 0 ? `Pick up to ${maxSelectable} subjects you offer in school.` : 'Curriculum subjects setup',
     whatsapp: 'Join our WhatsApp community for weekly results!',
     password: 'Last step — create a password.',
   };
@@ -244,9 +324,17 @@ export default function StudentAuthPage() {
             <button type="button" onClick={() => setSchoolId('self')} className={`card card-select ${schoolId === 'self' ? 'selected' : ''}`}>
               🎒 My school is not listed <span className="text-[var(--wolf)] font-bold">(participate as “Self”)</span>
             </button>
-            {INITIAL_REGISTERED_SCHOOLS.map((s) => (
+            {fetchingMaster && liveSchools.length === 0 && (
+              <div className="p-3 text-sm text-[var(--wolf)]">Loading schools onboarded by admin...</div>
+            )}
+            {!fetchingMaster && liveSchools.length === 0 && (
+              <div className="card card-blue text-sm">
+                No institutional partner schools registered yet. You can participate independently as <b>Self</b>!
+              </div>
+            )}
+            {liveSchools.map((s) => (
               <button key={s.id} type="button" onClick={() => setSchoolId(s.id)} className={`card card-select ${schoolId === s.id ? 'selected' : ''}`}>
-                🏫 {s.name} <span className="text-[var(--wolf)] font-bold">· {s.state}</span>
+                🏫 {s.name} <span className="text-[var(--wolf)] font-bold">· {s.state || s.lga || 'Active'}</span>
               </button>
             ))}
             <label className="label mt-2">Class</label>
@@ -260,18 +348,30 @@ export default function StudentAuthPage() {
 
         {screen === 'subjects' && (
           <div className="flex flex-col gap-3">
-            <div className="flex items-center justify-between">
-              <span className="label !mb-0">{subjects.length} / 9 chosen</span>
-              <div className="progress w-32"><span style={{ width: `${(subjects.length / 9) * 100}%` }} /></div>
-            </div>
-            <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
-              {NIGERIAN_SUBJECTS.map((s) => (
-                <button key={s.id} type="button" onClick={() => toggleSubject(s.id)} className={`card card-select ${subjects.includes(s.id) ? 'selected' : ''}`}>
-                  <div className="text-xs font-black text-[var(--hare)] uppercase">{s.shortCode}</div>
-                  <div className="font-black leading-tight">{s.name}</div>
-                </button>
-              ))}
-            </div>
+            {fetchingMaster && liveSubjects.length === 0 && (
+              <div className="p-3 text-sm text-[var(--wolf)]">Loading live curriculum subjects...</div>
+            )}
+            {!fetchingMaster && liveSubjects.length === 0 && (
+              <div className="card card-yellow text-sm">
+                Curriculum subjects are currently being configured by the platform administrator. You can continue to complete your profile, and you will be enrolled when subjects go live!
+              </div>
+            )}
+            {liveSubjects.length > 0 && (
+              <>
+                <div className="flex items-center justify-between">
+                  <span className="label !mb-0">{subjects.length} / {maxSelectable} chosen</span>
+                  <div className="progress w-32"><span style={{ width: `${(subjects.length / maxSelectable) * 100}%` }} /></div>
+                </div>
+                <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+                  {liveSubjects.map((s) => (
+                    <button key={s.id} type="button" onClick={() => toggleSubject(s.id)} className={`card card-select ${subjects.includes(s.id) ? 'selected' : ''}`}>
+                      <div className="text-xs font-black text-[var(--hare)] uppercase">{s.shortCode || s.name.slice(0, 3)}</div>
+                      <div className="font-black leading-tight">{s.name}</div>
+                    </button>
+                  ))}
+                </div>
+              </>
+            )}
           </div>
         )}
 
