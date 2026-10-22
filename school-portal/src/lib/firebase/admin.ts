@@ -1,6 +1,26 @@
-import { getApps, initializeApp, cert, App, ServiceAccount } from 'firebase-admin/app';
-import { getFirestore, Firestore } from 'firebase-admin/firestore';
-import { getAuth, Auth } from 'firebase-admin/auth';
+import type { App, ServiceAccount } from 'firebase-admin/app';
+import type { Firestore } from 'firebase-admin/firestore';
+import type { Auth } from 'firebase-admin/auth';
+
+function loadFirebaseAdmin() {
+  try {
+    const nativeRequire = eval('require') as NodeRequire;
+    return {
+      app: nativeRequire('firebase-admin/app') as typeof import('firebase-admin/app'),
+      firestore: nativeRequire('firebase-admin/firestore') as typeof import('firebase-admin/firestore'),
+      auth: nativeRequire('firebase-admin/auth') as typeof import('firebase-admin/auth'),
+    };
+  } catch {
+    return {
+      // eslint-disable-next-line @typescript-eslint/no-require-imports
+      app: require('firebase-admin/app') as typeof import('firebase-admin/app'),
+      // eslint-disable-next-line @typescript-eslint/no-require-imports
+      firestore: require('firebase-admin/firestore') as typeof import('firebase-admin/firestore'),
+      // eslint-disable-next-line @typescript-eslint/no-require-imports
+      auth: require('firebase-admin/auth') as typeof import('firebase-admin/auth'),
+    };
+  }
+}
 
 export const isFirebaseAdminConfigured = (): boolean => {
   return Boolean(
@@ -12,6 +32,8 @@ export const isFirebaseAdminConfigured = (): boolean => {
 };
 
 export function getAdminApp(): App | null {
+  const { app } = loadFirebaseAdmin();
+  const { getApps, initializeApp, cert } = app;
   const apps = getApps();
   if (apps.length > 0) {
     return apps[0]!;
@@ -61,13 +83,15 @@ export function getAdminApp(): App | null {
 }
 
 export function getAdminFirestore(): Firestore | null {
-  const app = getAdminApp();
-  if (!app) return null;
-  return getFirestore(app);
+  const adminApp = getAdminApp();
+  if (!adminApp) return null;
+  const { firestore } = loadFirebaseAdmin();
+  return firestore.getFirestore(adminApp);
 }
 
 export function getAdminAuth(): Auth | null {
-  const app = getAdminApp();
-  if (!app) return null;
-  return getAuth(app);
+  const adminApp = getAdminApp();
+  if (!adminApp) return null;
+  const { auth } = loadFirebaseAdmin();
+  return auth.getAuth(adminApp);
 }

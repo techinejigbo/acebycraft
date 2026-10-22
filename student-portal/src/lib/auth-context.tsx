@@ -209,9 +209,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         }),
       });
 
-      const result = await res.json();
+      const text = await res.text();
+      const result = text ? JSON.parse(text) : {};
       if (!res.ok || !result.success) {
-        return { success: false, error: result.error || 'Invalid phone number or password' };
+        return { success: false, error: result.error || `Server error (${res.status}). Verify Firebase Admin credentials on Vercel.` };
       }
 
       setStudent(result.user);

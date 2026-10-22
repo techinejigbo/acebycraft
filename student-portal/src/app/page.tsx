@@ -61,8 +61,14 @@ export default function StudentAuthPage() {
     async function loadMasterData() {
       try {
         const [schRes, subRes] = await Promise.all([
-          fetch('/api/schools').then((r) => r.json()),
-          fetch('/api/subjects').then((r) => r.json()),
+          fetch('/api/schools').then(async (r) => {
+            const text = await r.text();
+            return text ? JSON.parse(text) : { success: false };
+          }),
+          fetch('/api/subjects').then(async (r) => {
+            const text = await r.text();
+            return text ? JSON.parse(text) : { success: false };
+          }),
         ]);
         if (schRes.success && schRes.schools) {
           setLiveSchools(schRes.schools);

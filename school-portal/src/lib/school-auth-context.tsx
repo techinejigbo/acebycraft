@@ -57,7 +57,8 @@ export function SchoolAuthProvider({ children }: { children: React.ReactNode }) 
   const loadSchools = async () => {
     try {
       const res = await fetch('/api/schools');
-      const data = await res.json();
+      const text = await res.text();
+      const data = text ? JSON.parse(text) : {};
       if (data.success && Array.isArray(data.schools)) {
         setAvailableSchools(data.schools);
       }
@@ -91,7 +92,8 @@ export function SchoolAuthProvider({ children }: { children: React.ReactNode }) 
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ code: code.trim(), passcode: passcode.trim() }),
       });
-      const data = await res.json();
+      const text = await res.text();
+      const data = text ? JSON.parse(text) : {};
 
       if (data.success && data.school) {
         const sess: SchoolUserSession = data.school;
@@ -99,7 +101,7 @@ export function SchoolAuthProvider({ children }: { children: React.ReactNode }) 
         localStorage.setItem(STORAGE_KEY, JSON.stringify(sess));
         return { success: true };
       }
-      return { success: false, error: data.error || 'Authentication failed' };
+      return { success: false, error: data.error || `Server error (${res.status}). Check Firebase Admin credentials.` };
     } catch (err: any) {
       return { success: false, error: err.message || 'Error connecting to server' };
     }
@@ -120,7 +122,8 @@ export function SchoolAuthProvider({ children }: { children: React.ReactNode }) 
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ action: 'register', ...data }),
       });
-      const resData = await res.json();
+      const text = await res.text();
+      const resData = text ? JSON.parse(text) : {};
       if (resData.success && resData.school) {
         const sess: SchoolUserSession = resData.school;
         setSchool(sess);
@@ -128,7 +131,7 @@ export function SchoolAuthProvider({ children }: { children: React.ReactNode }) 
         await loadSchools();
         return { success: true, school: sess };
       }
-      return { success: false, error: resData.error || 'Failed to register school' };
+      return { success: false, error: resData.error || `Failed to register school (${res.status})` };
     } catch (err: any) {
       return { success: false, error: err.message || 'Error connecting to server' };
     }

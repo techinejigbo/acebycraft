@@ -54,13 +54,14 @@ export function TeacherAuthProvider({ children }: { children: React.ReactNode })
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ action: 'login', phone, pass }),
       });
-      const data = await res.json();
+      const text = await res.text();
+      const data = text ? JSON.parse(text) : {};
       if (data.success && data.teacher) {
         setTeacher(data.teacher);
         localStorage.setItem(STORAGE_KEY, JSON.stringify(data.teacher));
         return { success: true };
       }
-      return { success: false, error: data.error || 'Login failed' };
+      return { success: false, error: data.error || `Login failed (${res.status})` };
     } catch (err: any) {
       return { success: false, error: err.message || 'Error communicating with server' };
     }
@@ -73,13 +74,14 @@ export function TeacherAuthProvider({ children }: { children: React.ReactNode })
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ action: 'register', ...data }),
       });
-      const resData = await res.json();
+      const text = await res.text();
+      const resData = text ? JSON.parse(text) : {};
       if (resData.success && resData.teacher) {
         setTeacher(resData.teacher);
         localStorage.setItem(STORAGE_KEY, JSON.stringify(resData.teacher));
         return { success: true };
       }
-      return { success: false, error: resData.error || 'Registration failed' };
+      return { success: false, error: resData.error || `Registration failed (${res.status})` };
     } catch (err: any) {
       return { success: false, error: err.message || 'Error communicating with server' };
     }

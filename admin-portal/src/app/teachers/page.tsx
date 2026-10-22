@@ -140,7 +140,7 @@ export default function TeachersManagementPage() {
   };
 
   const copyCredentials = (teacher: MasterTeacher) => {
-    const studioUrl = process.env.NEXT_PUBLIC_TEACHER_PORTAL_URL || 'http://localhost:3003';
+    const studioUrl = process.env.NEXT_PUBLIC_TEACHER_PORTAL_URL || 'https://acebycraft-teacher.vercel.app';
     const credText = `Educator: ${teacher.name}\nUsername / Phone: ${teacher.phone}\nPassword: ${teacher.pass}\nTeacher Studio URL: ${studioUrl}`;
     navigator.clipboard.writeText(credText);
     setCopiedId(teacher.id);

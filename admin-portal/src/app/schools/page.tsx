@@ -134,7 +134,7 @@ export default function SchoolsManagementPage() {
   };
 
   const copyCredentials = (school: MasterSchool) => {
-    const portalUrl = process.env.NEXT_PUBLIC_SCHOOL_PORTAL_URL || 'http://localhost:3002';
+    const portalUrl = process.env.NEXT_PUBLIC_SCHOOL_PORTAL_URL || 'https://acebycraft-school.vercel.app';
     const credText = `Institution: ${school.name}\nSchool Code: ${school.code}\nPortal Login Passcode: ${school.passcode}\nPortal URL: ${portalUrl}`;
     navigator.clipboard.writeText(credText);
     setCopiedId(school.id);
