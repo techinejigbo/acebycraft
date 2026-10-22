@@ -1,6 +1,6 @@
 # AceByCraft (ABC Nigeria) — Weekly Continuous Assessment Platform
 
-A multi-subject weekly continuous assessment platform for Nigerian secondary school students. Students take a timed weekly assessment across their chosen subjects. Students who reach the score benchmark compete for airtime rewards ranked by completion speed. **Airtime is disbursed manually** by the platform administrator.
+A multi-subject weekly continuous assessment (CA) platform for Nigerian secondary school students. Students take a timed weekly assessment across their chosen subjects. Students who reach the score benchmark compete for airtime rewards ranked by completion speed. **Airtime is disbursed manually** by the platform administrator.
 
 ---
 
