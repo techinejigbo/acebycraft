@@ -1,24 +1,23 @@
 import type { App, ServiceAccount } from 'firebase-admin/app';
 import type { Firestore } from 'firebase-admin/firestore';
-import type { Auth } from 'firebase-admin/auth';
 
-function loadFirebaseAdmin() {
+function loadFirebaseApp(): typeof import('firebase-admin/app') {
   try {
     const nativeRequire = eval('require') as NodeRequire;
-    return {
-      app: nativeRequire('firebase-admin/app') as typeof import('firebase-admin/app'),
-      firestore: nativeRequire('firebase-admin/firestore') as typeof import('firebase-admin/firestore'),
-      auth: nativeRequire('firebase-admin/auth') as typeof import('firebase-admin/auth'),
-    };
+    return nativeRequire('firebase-admin/app');
   } catch {
-    return {
-      // eslint-disable-next-line @typescript-eslint/no-require-imports
-      app: require('firebase-admin/app') as typeof import('firebase-admin/app'),
-      // eslint-disable-next-line @typescript-eslint/no-require-imports
-      firestore: require('firebase-admin/firestore') as typeof import('firebase-admin/firestore'),
-      // eslint-disable-next-line @typescript-eslint/no-require-imports
-      auth: require('firebase-admin/auth') as typeof import('firebase-admin/auth'),
-    };
+    // eslint-disable-next-line @typescript-eslint/no-require-imports
+    return require('firebase-admin/app');
+  }
+}
+
+function loadFirebaseFirestore(): typeof import('firebase-admin/firestore') {
+  try {
+    const nativeRequire = eval('require') as NodeRequire;
+    return nativeRequire('firebase-admin/firestore');
+  } catch {
+    // eslint-disable-next-line @typescript-eslint/no-require-imports
+    return require('firebase-admin/firestore');
   }
 }
 
@@ -32,8 +31,7 @@ export const isFirebaseAdminConfigured = (): boolean => {
 };
 
 export function getAdminApp(): App | null {
-  const { app } = loadFirebaseAdmin();
-  const { getApps, initializeApp, cert } = app;
+  const { getApps, initializeApp, cert } = loadFirebaseApp();
   const apps = getApps();
   if (apps.length > 0) {
     return apps[0]!;
@@ -85,13 +83,5 @@ export function getAdminApp(): App | null {
 export function getAdminFirestore(): Firestore | null {
   const adminApp = getAdminApp();
   if (!adminApp) return null;
-  const { firestore } = loadFirebaseAdmin();
-  return firestore.getFirestore(adminApp);
-}
-
-export function getAdminAuth(): Auth | null {
-  const adminApp = getAdminApp();
-  if (!adminApp) return null;
-  const { auth } = loadFirebaseAdmin();
-  return auth.getAuth(adminApp);
+  return loadFirebaseFirestore().getFirestore(adminApp);
 }
