@@ -180,7 +180,7 @@ ${winners.map((w, i) => `${i + 1}. ${w.studentName} (${w.schoolName}) — ${w.av
             <div className="card card-blue"><div className="label">Participants</div><div className="text-3xl font-black" style={{ color: 'var(--macaw-shadow)' }}>{rows.length}</div></div>
             <div className="card card-green"><div className="label">Average score</div><div className="text-3xl font-black" style={{ color: 'var(--feather-shadow)' }}>{avg}%</div></div>
             <div className="card card-yellow"><div className="label">Reached {cutoff}%</div><div className="text-3xl font-black" style={{ color: 'var(--fox)' }}>{eligible.length}</div></div>
-            <div className="card"><div className="label">Cycle</div><div className="text-3xl font-black">Week 42</div></div>
+            <div className="card"><div className="label">Assessment Cycle</div><div className="text-2xl font-black text-emerald-600">Active</div></div>
           </div>
           <div className="card">
             <h3 className="text-lg mb-3">🏅 Fastest students at {cutoff}%+</h3>

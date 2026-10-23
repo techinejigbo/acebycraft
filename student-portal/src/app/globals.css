@@ -6,92 +6,130 @@
 }
 
 :root {
-  --feather: #58cc02;
-  --feather-shadow: #58a700;
-  --macaw: #1cb0f6;
-  --macaw-shadow: #1899d6;
-  --cardinal: #ff4b4b;
-  --cardinal-shadow: #ea2b2b;
-  --bee: #ffc800;
-  --bee-shadow: #e5b400;
-  --fox: #ff9600;
-  --fox-shadow: #e08600;
-  --beetle: #ce82ff;
-  --beetle-shadow: #a560d6;
-  --eel: #4b4b4b;
-  --wolf: #777777;
-  --hare: #afafaf;
-  --swan: #e5e5e5;
-  --polar: #f7f7f7;
-  --snow: #ffffff;
+  /* Core brand tokens - Preserving signature lime green */
+  --brand-green: #58cc02;
+  --brand-green-shadow: #58a700;
+  --brand-blue: #0ea5e9;
+  --brand-blue-shadow: #0284c7;
+  --brand-red: #ff4b4b;
+  --brand-red-shadow: #ea2b2b;
+  --brand-gold: #f59e0b;
+  --brand-gold-shadow: #d97706;
+  --brand-orange: #ff9600;
+  --brand-orange-shadow: #e08600;
+  --brand-purple: #a855f7;
+  --brand-purple-shadow: #9333ea;
+
+  /* Neutrals & surfaces */
+  --text-primary: #1e293b;
+  --text-secondary: #64748b;
+  --text-muted: #94a3b8;
+  --border-subtle: #e2e8f0;
+  --surface-muted: #f8fafc;
+  --surface-card: #ffffff;
+
+  /* Backward-compatible alias tokens */
+  --feather: var(--brand-green);
+  --feather-shadow: var(--brand-green-shadow);
+  --macaw: var(--brand-blue);
+  --macaw-shadow: var(--brand-blue-shadow);
+  --cardinal: var(--brand-red);
+  --cardinal-shadow: var(--brand-red-shadow);
+  --bee: var(--brand-gold);
+  --bee-shadow: var(--brand-gold-shadow);
+  --fox: var(--brand-orange);
+  --fox-shadow: var(--brand-orange-shadow);
+  --beetle: var(--brand-purple);
+  --beetle-shadow: var(--brand-purple-shadow);
+  --eel: var(--text-primary);
+  --wolf: var(--text-secondary);
+  --hare: var(--text-muted);
+  --swan: var(--border-subtle);
+  --polar: var(--surface-muted);
+  --snow: var(--surface-card);
 }
 
 html, body {
   font-family: 'Nunito', ui-sans-serif, system-ui, sans-serif;
-  background: var(--snow);
-  color: var(--eel);
+  background: var(--surface-card);
+  color: var(--text-primary);
   font-weight: 700;
   -webkit-font-smoothing: antialiased;
 }
 
-h1, h2, h3, h4 { font-weight: 900; color: var(--eel); }
+h1, h2, h3, h4 {
+  font-family: 'Nunito', ui-sans-serif, system-ui, sans-serif;
+  font-weight: 900;
+  color: var(--text-primary);
+}
 
-/* ---------- 3D BUTTONS ---------- */
+/* Standardized Brand Logo across all 4 portals */
+.brand-logo {
+  font-family: 'Nunito', ui-sans-serif, system-ui, sans-serif;
+  font-weight: 900;
+  letter-spacing: -0.025em;
+  color: var(--brand-green);
+  line-height: 1;
+  display: inline-block;
+}
+
+/* ---------- 3D TACTILE BUTTONS ---------- */
 .btn {
-  --b: var(--feather); --s: var(--feather-shadow); --c: #fff;
+  --b: var(--brand-green); --s: var(--brand-green-shadow); --c: #fff;
   display: inline-flex; align-items: center; justify-content: center; gap: .5rem;
   padding: .85rem 1.25rem; border-radius: 16px; border: 2px solid var(--s);
   border-bottom-width: 4px; background: var(--b); color: var(--c);
-  font-weight: 900; font-size: .9rem; letter-spacing: .8px; text-transform: uppercase;
+  font-family: 'Nunito', ui-sans-serif, system-ui, sans-serif;
+  font-weight: 900; font-size: .9rem; letter-spacing: .6px; text-transform: uppercase;
   cursor: pointer; transition: transform .08s, filter .15s; user-select: none; text-decoration: none;
 }
-.btn:hover { filter: brightness(1.06); }
+.btn:hover { filter: brightness(1.05); }
 .btn:active { transform: translateY(3px); border-bottom-width: 1px; margin-bottom: 3px; }
-.btn:disabled { background: var(--swan); border-color: var(--swan); color: var(--hare); cursor: not-allowed; filter: none; }
-.btn-blue { --b: var(--macaw); --s: var(--macaw-shadow); }
-.btn-red { --b: var(--cardinal); --s: var(--cardinal-shadow); }
-.btn-yellow { --b: var(--bee); --s: var(--bee-shadow); }
-.btn-purple { --b: var(--beetle); --s: var(--beetle-shadow); }
-.btn-outline { --b: #fff; --s: var(--swan); --c: var(--macaw); border-color: var(--swan); }
-.btn-outline:hover { background: var(--polar); }
+.btn:disabled { background: var(--border-subtle); border-color: var(--border-subtle); color: var(--text-muted); cursor: not-allowed; filter: none; }
+.btn-blue { --b: var(--brand-blue); --s: var(--brand-blue-shadow); }
+.btn-red { --b: var(--brand-red); --s: var(--brand-red-shadow); }
+.btn-yellow { --b: var(--brand-gold); --s: var(--brand-gold-shadow); }
+.btn-purple { --b: var(--brand-purple); --s: var(--brand-purple-shadow); }
+.btn-outline { --b: #fff; --s: var(--border-subtle); --c: var(--brand-blue); border-color: var(--border-subtle); }
+.btn-outline:hover { background: var(--surface-muted); }
 .btn-block { width: 100%; }
 
 /* ---------- CARDS ---------- */
 .card {
-  background: #fff; border: 2px solid var(--swan); border-bottom-width: 4px;
+  background: #fff; border: 2px solid var(--border-subtle); border-bottom-width: 4px;
   border-radius: 16px; padding: 1.25rem;
 }
-.card-green { background: #d7ffb8; border-color: var(--feather); color: var(--feather-shadow); }
-.card-yellow { background: #fff5cc; border-color: var(--bee); }
-.card-red { background: #ffdfe0; border-color: var(--cardinal); }
-.card-blue { background: #ddf4ff; border-color: var(--macaw); }
+.card-green { background: #ecfdf5; border-color: var(--brand-green); color: var(--brand-green-shadow); }
+.card-yellow { background: #fffbeb; border-color: var(--brand-gold); }
+.card-red { background: #fef2f2; border-color: var(--brand-red); }
+.card-blue { background: #f0f9ff; border-color: var(--brand-blue); }
 .card-select {
   cursor: pointer; transition: background .1s, transform .08s; text-align: left;
 }
-.card-select:hover { background: var(--polar); }
+.card-select:hover { background: var(--surface-muted); }
 .card-select:active { transform: translateY(2px); border-bottom-width: 2px; }
-.card-select.selected { background: #ddf4ff; border-color: var(--macaw); color: var(--macaw-shadow); }
+.card-select.selected { background: #f0f9ff; border-color: var(--brand-blue); color: var(--brand-blue-shadow); }
 
 /* ---------- INPUTS ---------- */
 .input {
-  width: 100%; background: var(--polar); border: 2px solid var(--swan);
-  border-radius: 16px; padding: .85rem 1rem; font-weight: 700; font-size: 1rem; color: var(--eel);
+  width: 100%; background: var(--surface-muted); border: 2px solid var(--border-subtle);
+  border-radius: 16px; padding: .85rem 1rem; font-weight: 700; font-size: 1rem; color: var(--text-primary);
   outline: none; transition: border-color .15s;
 }
-.input:focus { border-color: var(--macaw); background: #fff; }
-.input::placeholder { color: var(--hare); }
-.label { display: block; font-size: .75rem; letter-spacing: .8px; text-transform: uppercase; color: var(--wolf); font-weight: 900; margin-bottom: .4rem; }
+.input:focus { border-color: var(--brand-blue); background: #fff; }
+.input::placeholder { color: var(--text-muted); }
+.label { display: block; font-size: .75rem; letter-spacing: .8px; text-transform: uppercase; color: var(--text-secondary); font-weight: 800; margin-bottom: .4rem; }
 
 /* ---------- CHIPS / PILLS ---------- */
 .pill {
   display: inline-flex; align-items: center; gap: .4rem; padding: .35rem .75rem;
-  border-radius: 999px; font-weight: 900; font-size: .8rem;
+  border-radius: 999px; font-weight: 800; font-size: .8rem;
 }
 
 /* ---------- PROGRESS ---------- */
-.progress { height: 16px; background: var(--swan); border-radius: 999px; overflow: hidden; }
+.progress { height: 16px; background: var(--border-subtle); border-radius: 999px; overflow: hidden; }
 .progress > span {
-  display: block; height: 100%; background: var(--feather); border-radius: 999px; position: relative;
+  display: block; height: 100%; background: var(--brand-green); border-radius: 999px; position: relative;
   transition: width .4s cubic-bezier(.2,.8,.2,1);
 }
 .progress > span::after {
@@ -99,15 +137,13 @@ h1, h2, h3, h4 { font-weight: 900; color: var(--eel); }
   background: rgba(255,255,255,.35); border-radius: 999px;
 }
 
-/* ---------- PATH NODES ---------- */
-.node {
-  width: 76px; height: 68px; border-radius: 50%; display: flex; align-items: center; justify-content: center;
-  color: #fff; font-weight: 900; border: 0; cursor: pointer; transition: transform .08s;
-  background: var(--feather); box-shadow: 0 8px 0 var(--feather-shadow);
+/* ---------- STAGE / QUEST CARDS ---------- */
+.quest-node {
+  background: #fff; border: 2px solid var(--border-subtle); border-bottom-width: 4px;
+  border-radius: 20px; transition: transform .12s, border-color .12s;
 }
-.node:active { transform: translateY(6px); box-shadow: 0 2px 0 var(--feather-shadow); }
-.node.done { background: var(--bee); box-shadow: 0 8px 0 var(--bee-shadow); }
-.node.locked { background: var(--swan); box-shadow: 0 8px 0 #cfcfcf; color: var(--hare); cursor: not-allowed; }
+.quest-node:hover { transform: translateY(-2px); border-color: var(--brand-blue); }
+.quest-node.active { border-color: var(--brand-green); box-shadow: 0 4px 12px rgba(88, 204, 2, 0.15); }
 
 /* ---------- ANIMATIONS ---------- */
 @keyframes bob { 0%,100% { transform: translateY(0); } 50% { transform: translateY(-8px); } }

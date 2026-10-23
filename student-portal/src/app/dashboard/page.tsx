@@ -75,7 +75,6 @@ export default function DashboardPage() {
 
   const current = subs.find((s) => s.cycleId === CURRENT_WEEKLY_CYCLE.id) || null;
   const latest = subs[0] || null;
-  const offsets = [0, 52, 84, 52, 0, -52, -84, -52, 0];
 
   const results = latest ? Object.values(latest.subjectResults || {}).sort((a, b) => b.percentage - a.percentage) : [];
   const strengths = results.slice(0, 3);
@@ -114,10 +113,10 @@ export default function DashboardPage() {
       <main className="min-w-0">
         {/* ---------------- LEARN ---------------- */}
         {tab === 'learn' && (
-          <div className="flex flex-col gap-8">
+          <div className="flex flex-col gap-6">
             <div className="rounded-2xl p-5 flex items-center justify-between gap-4" style={{ background: 'var(--feather)', borderBottom: '5px solid var(--feather-shadow)' }}>
               <div className="text-white">
-                <div className="text-xs font-black uppercase tracking-widest opacity-80">Week {CURRENT_WEEKLY_CYCLE.cycleNumber} · closes Sunday 11:59 PM</div>
+                <div className="text-xs font-black uppercase tracking-widest opacity-80">This Week&apos;s Continuous Assessment · Closes Sunday 11:59 PM</div>
                 <h1 className="text-xl sm:text-2xl !text-white">
                   {mySubjects.length > 0 ? `Hi ${student.displayName.split(' ')[0]}! Ready for ${mySubjects.length} subject${mySubjects.length === 1 ? '' : 's'}?` : `Hi ${student.displayName.split(' ')[0]}! Welcome to your learning space`}
                 </h1>
@@ -130,7 +129,7 @@ export default function DashboardPage() {
               <Mascot size={90} mood="cheer" className="hidden sm:block shrink-0" />
             </div>
 
-            {/* Path */}
+            {/* 9-Subject Academic Stage Roadmap */}
             {mySubjects.length === 0 ? (
               <div className="card text-center p-8 flex flex-col items-center gap-3 w-full max-w-md mx-auto my-4">
                 <Mascot size={80} mood="happy" />
@@ -140,40 +139,89 @@ export default function DashboardPage() {
                 </p>
               </div>
             ) : (
-              <div className="flex flex-col items-center gap-6 py-2">
-                {mySubjects.map((id, i) => {
-                  const subName = getSubjectName(id);
-                  const done = !!current;
-                  return (
-                    <div key={id} className="relative flex flex-col items-center" style={{ transform: `translateX(${offsets[i % offsets.length]}px)` }}>
-                      {i === 0 && !done && (
-                        <div className="absolute -top-11 px-4 py-2 rounded-xl bg-white border-2 border-[var(--swan)] text-[var(--feather)] font-black uppercase text-sm animate-bob">
-                          Start
-                        </div>
-                      )}
-                      <button
-                        className={`node ${done ? 'done' : ''}`}
-                        onClick={() => !done && router.push(`/assessment/${CURRENT_WEEKLY_CYCLE.id}`)}
-                        title={subName}
-                      >
-                        {done ? <Check className="w-9 h-9" strokeWidth={4} /> : <Star className="w-9 h-9" fill="#fff" />}
-                      </button>
-                      <span className="mt-4 text-sm font-black text-[var(--wolf)]">{subName}</span>
-                    </div>
-                  );
-                })}
-                <div className="node locked mt-2" title="Sunday results"><Trophy className="w-9 h-9" /></div>
-                <span className="text-sm font-black text-[var(--hare)]">Sunday night results</span>
-              </div>
-            )}
+              <div className="flex flex-col gap-4">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <h2 className="text-lg font-black text-[var(--eel)]">Weekly Assessment Arena</h2>
+                    <p className="text-xs text-[var(--wolf)] font-bold">10 objective questions per subject · 1 single timed attempt</p>
+                  </div>
+                  <span className="pill text-xs font-black" style={{ background: current ? '#d7ffb8' : '#ddf4ff', color: current ? 'var(--feather-shadow)' : 'var(--macaw-shadow)' }}>
+                    {current ? 'Completed' : `${mySubjects.length} Subjects Ready`}
+                  </span>
+                </div>
 
-            {!current && mySubjects.length > 0 && (
-              <button className="btn btn-block sm:w-80 sm:self-center" onClick={() => router.push(`/assessment/${CURRENT_WEEKLY_CYCLE.id}`)}>
-                Start assessment
-              </button>
-            )}
-            {current && (
-              <div className="card card-green text-center font-black">✅ You completed this week&apos;s assessment. Results come out Sunday night!</div>
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+                  {mySubjects.map((id, i) => {
+                    const subName = getSubjectName(id);
+                    const done = !!current;
+                    const subResult = current?.subjectResults?.[id];
+                    return (
+                      <div
+                        key={id}
+                        className={`card flex items-center justify-between p-4 transition-all ${
+                          done ? 'card-green' : 'hover:border-[var(--macaw)]'
+                        }`}
+                      >
+                        <div className="flex items-center gap-3">
+                          <div
+                            className="w-10 h-10 rounded-xl flex items-center justify-center font-black text-sm shrink-0"
+                            style={{
+                              background: done ? 'var(--feather)' : 'var(--polar)',
+                              color: done ? '#fff' : 'var(--wolf)',
+                              border: '2px solid var(--swan)',
+                            }}
+                          >
+                            {done ? <Check className="w-5 h-5" strokeWidth={3} /> : `${i + 1}`}
+                          </div>
+                          <div>
+                            <div className="font-black text-sm leading-tight text-[var(--eel)]">{subName}</div>
+                            <div className="text-xs text-[var(--wolf)] font-bold">
+                              {done ? `Score: ${subResult?.score ?? '—'}/10` : '10 questions'}
+                            </div>
+                          </div>
+                        </div>
+
+                        {done ? (
+                          <span className="pill text-xs font-black" style={{ background: '#d7ffb8', color: 'var(--feather-shadow)' }}>
+                            Done
+                          </span>
+                        ) : (
+                          <span className="pill text-xs font-black" style={{ background: 'var(--polar)', color: 'var(--wolf)' }}>
+                            Stage {i + 1}
+                          </span>
+                        )}
+                      </div>
+                    );
+                  })}
+                </div>
+
+                {/* Final Sunday Rewards milestone card */}
+                <div className="card flex items-center justify-between p-4" style={{ background: '#fffbeb', borderColor: 'var(--bee)' }}>
+                  <div className="flex items-center gap-3">
+                    <div className="w-10 h-10 rounded-xl flex items-center justify-center shrink-0" style={{ background: 'var(--bee)', color: '#fff' }}>
+                      <Trophy className="w-5 h-5" />
+                    </div>
+                    <div>
+                      <div className="font-black text-sm text-[var(--eel)]">Sunday Night Broadcast & Rewards</div>
+                      <div className="text-xs text-[var(--fox)] font-bold">Top 10 speed rankings published in WhatsApp community</div>
+                    </div>
+                  </div>
+                  <span className="pill text-xs font-black" style={{ background: '#fff', color: 'var(--fox)' }}>
+                    ₦1,000 Airtime
+                  </span>
+                </div>
+
+                {!current && mySubjects.length > 0 && (
+                  <button className="btn btn-block sm:w-80 sm:self-center mt-2" onClick={() => router.push(`/assessment/${CURRENT_WEEKLY_CYCLE.id}`)}>
+                    Start Assessment (90 Qs)
+                  </button>
+                )}
+                {current && (
+                  <div className="card card-green text-center font-black">
+                    ✅ You completed this week&apos;s continuous assessment! Speed ranking results are announced Sunday night.
+                  </div>
+                )}
+              </div>
             )}
 
             {/* Strengths / weaknesses */}

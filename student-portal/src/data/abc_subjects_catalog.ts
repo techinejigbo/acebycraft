@@ -1362,8 +1362,8 @@ export const ABC_FULL_QUESTION_BANK: FullSubjectBank = {
 
 export const CURRENT_WEEKLY_CYCLE: WeeklyAssessmentCycle = {
   id: 'abc-week-42',
-  title: 'ABC Nigeria Weekly Academic Challenge — Week 42',
-  cycleNumber: 42,
+  title: 'ABC Nigeria Continuous Assessment',
+  cycleNumber: 1,
   description: 'National secondary continuous assessment across 9 selected subjects. 10 randomized objective questions per subject (90 total). Complete in a single attempt. Students scoring >=80% on average compete for the Top 10 airtime prizes by total completion speed!',
   startDate: '2026-10-16T00:00:00.000Z',
   endDate: '2026-10-25T23:59:59.000Z',

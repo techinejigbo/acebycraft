@@ -196,7 +196,7 @@ export default function SchoolDashboardPage() {
     const encoded = encodeURI(csvContent);
     const link = document.createElement('a');
     link.setAttribute('href', encoded);
-    link.setAttribute('download', `${school?.name || 'School'}_Week42_Assessment_Report.csv`);
+    link.setAttribute('download', `${(school?.name || 'School').replace(/\s+/g, '_')}_Continuous_Assessment_Report.csv`);
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
