@@ -6,6 +6,11 @@ import { AdminNavbar } from '@/components/AdminNavbar';
 export const metadata: Metadata = {
   title: 'AceByCraft Nigeria (ABC Nigeria) | School Analytics & IT Command Console',
   description: 'Registered school performance monitoring, student continuous assessment reports, frequently missed questions diagnostics, and IT unit national assessment management.',
+  icons: {
+    icon: '/icon.svg',
+    shortcut: '/icon.svg',
+    apple: '/icon.svg',
+  },
 };
 
 export default function RootLayout({

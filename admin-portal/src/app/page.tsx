@@ -73,7 +73,7 @@ export default function ITUnitLoginPage() {
   return (
     <div className="min-h-screen flex flex-col items-center justify-center px-4 py-8 max-w-md mx-auto text-center gap-5">
       <div className="flex items-center gap-2">
-        <span className="text-3xl font-black tracking-tight" style={{ color: 'var(--feather)' }}>AceByCraft</span>
+        <span className="brand-logo text-3xl">AceByCraft</span>
         <span className="pill text-xs font-black" style={{ background: '#f1dcff', color: 'var(--beetle-shadow)' }}>IT UNIT</span>
       </div>
 

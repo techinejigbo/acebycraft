@@ -6,6 +6,11 @@ import { TeacherNavbar } from '@/components/TeacherNavbar';
 export const metadata: Metadata = {
   title: 'AceByCraft Nigeria | Volunteer Teacher & Question Authoring Portal',
   description: 'Contribute high-quality WAEC/NECO continuous assessment objective questions and detailed pedagogical explanations for secondary school students across Nigeria.',
+  icons: {
+    icon: '/icon.svg',
+    shortcut: '/icon.svg',
+    apple: '/icon.svg',
+  },
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {

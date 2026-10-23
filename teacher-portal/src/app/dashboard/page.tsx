@@ -812,7 +812,7 @@ export default function TeacherDashboardPage() {
                   <div className="self-end sm:self-center flex-shrink-0">
                     {q.status === 'approved' ? (
                       <span className="pill text-xs font-black" style={{ background: '#d7ffb8', color: 'var(--feather-shadow)' }}>
-                        ✓ Live in Week 42
+                        ✓ Live in Active Assessment
                       </span>
                     ) : (
                       <span className="pill text-xs font-black" style={{ background: '#fff5cc', color: 'var(--fox)' }}>

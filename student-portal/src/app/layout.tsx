@@ -6,6 +6,11 @@ import { Navbar } from '@/components/Navbar';
 export const metadata: Metadata = {
   title: 'AceByCraft Nigeria (ABC Nigeria) | 9-Subject Continuous Assessment & Airtime Scholarships',
   description: 'National secondary academic continuous assessment platform. Answer 10 objective questions each across your 9 offering subjects, review teacher explanations, and earn weekly mobile airtime rewards.',
+  icons: {
+    icon: '/icon.svg',
+    shortcut: '/icon.svg',
+    apple: '/icon.svg',
+  },
 };
 
 export default function RootLayout({

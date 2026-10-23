@@ -1,0 +1,62 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 128" width="100%" height="100%">
+  <defs>
+    <linearGradient id="ace-bg" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#ffffff"/>
+      <stop offset="100%" stop-color="#f0fdf4"/>
+    </linearGradient>
+    <filter id="ace-shadow" x="-10%" y="-10%" width="120%" height="120%">
+      <feDropShadow dx="0" dy="2" stdDeviation="2" flood-color="#0f172a" flood-opacity="0.12"/>
+    </filter>
+  </defs>
+
+  <!-- Clean rounded backdrop with signature green border -->
+  <rect x="4" y="4" width="120" height="120" rx="30" fill="url(#ace-bg)" stroke="#58cc02" stroke-width="4"/>
+
+  <!-- Collegiate Ace Scholar Pencil Mascot -->
+  <g filter="url(#ace-shadow)" transform="translate(4, -4)">
+    <!-- Soft floor shadow -->
+    <ellipse cx="60" cy="118" rx="28" ry="4" fill="#000000" opacity="0.12" />
+
+    <!-- Cheerful Arms -->
+    <path d="M28 76 Q14 74 12 60" stroke="#FFC800" stroke-width="7" stroke-linecap="round" fill="none" />
+    <path d="M92 76 Q106 70 108 58" stroke="#FFC800" stroke-width="7" stroke-linecap="round" fill="none" />
+
+    <!-- Pencil Body -->
+    <rect x="30" y="34" width="60" height="76" rx="9" fill="#FFC800" />
+    <rect x="30" y="34" width="15" height="76" rx="8" fill="#E5B400" />
+    <rect x="75" y="34" width="15" height="76" fill="#FFD84D" opacity="0.6" />
+
+    <!-- Metallic Ferrule Collar -->
+    <rect x="30" y="24" width="60" height="11" fill="#CBD5E1" />
+    <rect x="30" y="28" width="60" height="3" fill="#94A3B8" />
+
+    <!-- Eraser Dome -->
+    <path d="M30 24 V19 Q30 10 60 10 Q90 10 90 19 V24 Z" fill="#EF4444" />
+
+    <!-- Collegiate Scholar Mortarboard Cap -->
+    <path d="M50 14 Q60 18 70 14 L68 18 Q60 22 52 18 Z" fill="#0F172A" />
+    <polygon points="60,2 86,10 60,18 34,10" fill="#1E293B" stroke="#0F172A" stroke-width="1.5" stroke-linejoin="round" />
+    <!-- Gold Tassel -->
+    <circle cx="60" cy="10" r="2" fill="#F59E0B" />
+    <path d="M60 10 Q78 12 82 20" stroke="#F59E0B" stroke-width="1.8" stroke-linecap="round" fill="none" />
+    <circle cx="82" cy="21" r="2" fill="#D97706" />
+
+    <!-- Sharpened Wooden Tip -->
+    <path d="M30 110 L60 124 L90 110 Z" fill="#F3D9A8" />
+    <!-- Lead Tip -->
+    <path d="M51 120 L60 124 L69 120 Z" fill="#334155" />
+
+    <!-- Expressive Eyes -->
+    <ellipse cx="48" cy="56" rx="7" ry="8" fill="#FFFFFF" />
+    <ellipse cx="72" cy="56" rx="7" ry="8" fill="#FFFFFF" />
+    <circle cx="49" cy="57" r="4" fill="#1E293B" />
+    <circle cx="73" cy="57" r="4" fill="#1E293B" />
+
+    <!-- Joyful Smile -->
+    <path d="M47 72 Q60 84 73 72" stroke="#1E293B" stroke-width="3.5" stroke-linecap="round" fill="none" />
+
+    <!-- Cheerful Cheek Blush -->
+    <circle cx="39" cy="68" r="4" fill="#FF9600" opacity="0.5" />
+    <circle cx="81" cy="68" r="4" fill="#FF9600" opacity="0.5" />
+  </g>
+</svg>

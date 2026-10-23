@@ -196,7 +196,7 @@ export default function StudentAuthPage() {
     return (
       <div className="min-h-screen flex flex-col items-center justify-center px-4 py-3 sm:py-6 text-center gap-3 sm:gap-4 max-w-md mx-auto">
         <div className="flex items-center gap-2">
-          <span className="text-2xl sm:text-3xl font-black tracking-tight" style={{ color: 'var(--feather)' }}>acebycraft</span>
+          <span className="brand-logo text-2xl sm:text-3xl">AceByCraft</span>
           <span className="pill py-1 px-2.5 text-xs font-black" style={{ background: '#d7ffb8', color: 'var(--feather-shadow)' }}>NIGERIA</span>
         </div>
         <Mascot size={150} mood="happy" className="animate-bob" />
