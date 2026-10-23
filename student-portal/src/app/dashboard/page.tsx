@@ -3,7 +3,6 @@
 import React, { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth, DEFAULT_9_SUBJECTS } from '@/lib/auth-context';
-import { CURRENT_WEEKLY_CYCLE } from '@/data/abc_subjects_catalog';
 import { SubmissionResult } from '@/types';
 import { Mascot } from '@/components/Mascot';
 import { Check, Star, Lock, X, BookOpen, Trophy, User } from 'lucide-react';
@@ -21,6 +20,19 @@ export default function DashboardPage() {
   const [picker, setPicker] = useState(false);
   const [temp, setTemp] = useState<string[]>([]);
   const [liveSubjects, setLiveSubjects] = useState<{ id: string; name: string; shortCode?: string }[]>([]);
+  const [assessmentStatus, setAssessmentStatus] = useState<{
+    loading: boolean;
+    activeCycle: any | null;
+    status: 'open' | 'upcoming' | 'closed' | 'not_set';
+    statusMessage: string;
+    canStart: boolean;
+  }>({
+    loading: true,
+    activeCycle: null,
+    status: 'not_set',
+    statusMessage: 'Checking continuous assessment schedule...',
+    canStart: false,
+  });
 
   useEffect(() => {
     fetch('/api/subjects')
@@ -29,6 +41,29 @@ export default function DashboardPage() {
         if (d.success && d.subjects) setLiveSubjects(d.subjects);
       })
       .catch(() => {});
+
+    fetch('/api/assessments')
+      .then((r) => r.json())
+      .then((d) => {
+        if (d) {
+          setAssessmentStatus({
+            loading: false,
+            activeCycle: d.activeCycle || null,
+            status: d.status || (d.activeCycle ? 'open' : 'not_set'),
+            statusMessage: d.statusMessage || (d.activeCycle ? "This week's continuous assessment is live!" : 'The administrator has not published assessment questions for this week yet.'),
+            canStart: Boolean(d.canStart),
+          });
+        }
+      })
+      .catch(() => {
+        setAssessmentStatus({
+          loading: false,
+          activeCycle: null,
+          status: 'not_set',
+          statusMessage: 'The administrator has not published assessment questions for this week yet.',
+          canStart: false,
+        });
+      });
   }, []);
 
   useEffect(() => {
@@ -73,7 +108,9 @@ export default function DashboardPage() {
     ? validPreferred
     : (liveSubjects.length > 0 ? liveSubjects.slice(0, targetSubjectCount).map((s) => s.id) : []);
 
-  const current = subs.find((s) => s.cycleId === CURRENT_WEEKLY_CYCLE.id) || null;
+  const current = assessmentStatus.activeCycle
+    ? subs.find((s) => s.cycleId === assessmentStatus.activeCycle.id) || null
+    : null;
   const latest = subs[0] || null;
 
   const results = latest ? Object.values(latest.subjectResults || {}).sort((a, b) => b.percentage - a.percentage) : [];
@@ -116,17 +153,29 @@ export default function DashboardPage() {
           <div className="flex flex-col gap-6">
             <div className="rounded-2xl p-5 flex items-center justify-between gap-4" style={{ background: 'var(--feather)', borderBottom: '5px solid var(--feather-shadow)' }}>
               <div className="text-white">
-                <div className="text-xs font-black uppercase tracking-widest opacity-80">This Week&apos;s Continuous Assessment · Closes Sunday 11:59 PM</div>
+                <div className="text-xs font-black uppercase tracking-widest opacity-80">
+                  {assessmentStatus.canStart 
+                    ? "This Week's Continuous Assessment · Closes Sunday 11:59 PM" 
+                    : assessmentStatus.status === 'closed'
+                    ? "Continuous Assessment Closed · Closes Sunday 11:59 PM"
+                    : assessmentStatus.status === 'upcoming'
+                    ? "Continuous Assessment Scheduled · Opens Weekend"
+                    : "Continuous Assessment · Weekend Cycle"}
+                </div>
                 <h1 className="text-xl sm:text-2xl !text-white">
-                  {mySubjects.length > 0 ? `Hi ${student.displayName.split(' ')[0]}! Ready for ${mySubjects.length} subject${mySubjects.length === 1 ? '' : 's'}?` : `Hi ${student.displayName.split(' ')[0]}! Welcome to your learning space`}
+                  {assessmentStatus.activeCycle?.title
+                    ? assessmentStatus.activeCycle.title
+                    : mySubjects.length > 0 
+                    ? `Hi ${student.displayName.split(' ')[0]}! Ready for ${mySubjects.length} subject${mySubjects.length === 1 ? '' : 's'}?` 
+                    : `Hi ${student.displayName.split(' ')[0]}! Welcome to your learning space`}
                 </h1>
                 <p className="text-sm opacity-90 mt-1">
-                  {mySubjects.length > 0
-                    ? `Score 80%+ and finish fast to win ₦${CURRENT_WEEKLY_CYCLE.rewardConfig.amountNgn.toLocaleString()} airtime.`
-                    : 'Curriculum subjects are currently being configured by the platform administrator.'}
+                  {assessmentStatus.canStart
+                    ? `Score 80%+ and finish fast to win ₦${(assessmentStatus.activeCycle?.rewardConfig?.amountNgn || 1000).toLocaleString()} airtime.`
+                    : assessmentStatus.statusMessage}
                 </p>
               </div>
-              <Mascot size={90} mood="cheer" className="hidden sm:block shrink-0" />
+              <Mascot size={90} mood={assessmentStatus.canStart ? "cheer" : "happy"} className="hidden sm:block shrink-0" />
             </div>
 
             {/* 9-Subject Academic Stage Roadmap */}
@@ -207,14 +256,33 @@ export default function DashboardPage() {
                     </div>
                   </div>
                   <span className="pill text-xs font-black" style={{ background: '#fff', color: 'var(--fox)' }}>
-                    ₦1,000 Airtime
+                    ₦{(assessmentStatus.activeCycle?.rewardConfig?.amountNgn || 1000).toLocaleString()} Airtime
                   </span>
                 </div>
 
                 {!current && mySubjects.length > 0 && (
-                  <button className="btn btn-block sm:w-80 sm:self-center mt-2" onClick={() => router.push(`/assessment/${CURRENT_WEEKLY_CYCLE.id}`)}>
-                    Start Assessment (90 Qs)
-                  </button>
+                  assessmentStatus.canStart && assessmentStatus.activeCycle ? (
+                    <button
+                      className="btn btn-block sm:w-80 sm:self-center mt-2 cursor-pointer"
+                      onClick={() => router.push(`/assessment/${assessmentStatus.activeCycle.id}`)}
+                    >
+                      Start Assessment ({assessmentStatus.activeCycle.questionCount || 90} Qs)
+                    </button>
+                  ) : (
+                    <div className="flex flex-col items-center gap-2 mt-2 w-full">
+                      <button
+                        disabled
+                        className="btn btn-block sm:w-80 sm:self-center opacity-60 cursor-not-allowed border-dashed bg-slate-200 text-slate-500 border-slate-300 shadow-none transform-none"
+                        title={assessmentStatus.statusMessage}
+                      >
+                        <Lock className="w-4 h-4 mr-1.5 inline-block" />
+                        Start Assessment {assessmentStatus.activeCycle?.questionCount ? `(${assessmentStatus.activeCycle.questionCount} Qs)` : ''}
+                      </button>
+                      <div className="flex items-center gap-2 text-xs font-bold text-[var(--wolf)] text-center max-w-md bg-[var(--polar)] px-3 py-2 rounded-xl border border-[var(--swan)]">
+                        <span>⏳ {assessmentStatus.statusMessage}</span>
+                      </div>
+                    </div>
+                  )
                 )}
                 {current && (
                   <div className="card card-green text-center font-black">
@@ -283,7 +351,7 @@ export default function DashboardPage() {
             <div className="rounded-2xl p-6 text-center" style={{ background: 'var(--bee)', borderBottom: '5px solid var(--bee-shadow)' }}>
               <Trophy className="w-14 h-14 mx-auto text-white" />
               <h1 className="!text-white text-2xl mt-2">Weekly airtime rewards</h1>
-              <p className="text-white/90 mt-1">Top {CURRENT_WEEKLY_CYCLE.rewardConfig.winnerQuota} students with 80%+ average and the fastest total time win.</p>
+              <p className="text-white/90 mt-1">Top {assessmentStatus.activeCycle?.rewardConfig?.winnerQuota || 10} students with 80%+ average and the fastest total time win.</p>
             </div>
 
             <div className="grid sm:grid-cols-3 gap-4">
