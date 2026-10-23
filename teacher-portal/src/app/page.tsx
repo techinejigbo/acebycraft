@@ -114,7 +114,7 @@ export default function TeacherAuthPage() {
           <button
             type="button"
             onClick={() => setMode('login')}
-            className={`card card-select text-center !p-2.5 text-xs font-black uppercase ${
+            className={`card card-select text-center !p-2.5 min-h-[44px] flex items-center justify-center text-xs font-black uppercase cursor-pointer ${
               mode === 'login' ? 'selected' : ''
             }`}
           >
@@ -123,7 +123,7 @@ export default function TeacherAuthPage() {
           <button
             type="button"
             onClick={() => setMode('register')}
-            className={`card card-select text-center !p-2.5 text-xs font-black uppercase ${
+            className={`card card-select text-center !p-2.5 min-h-[44px] flex items-center justify-center text-xs font-black uppercase cursor-pointer ${
               mode === 'register' ? 'selected' : ''
             }`}
           >

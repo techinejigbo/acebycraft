@@ -243,15 +243,15 @@ export default function ContributionsReviewPage() {
         </div>
 
         {/* Status Filter Tabs */}
-        <div className="flex items-center gap-2 border-t border-slate-100 pt-3">
-          <span className="text-xs font-bold text-slate-400 uppercase mr-1">Status:</span>
+        <div className="flex items-center gap-2 border-t border-slate-100 pt-3 overflow-x-auto no-scrollbar">
+          <span className="text-xs font-bold text-slate-400 uppercase mr-1 shrink-0">Status:</span>
           {(['all', 'pending', 'approved', 'rejected'] as const).map((st) => {
             const isActive = statusFilter === st;
             return (
               <button
                 key={st}
                 onClick={() => setStatusFilter(st)}
-                className={`px-3 py-1 rounded-lg text-xs font-bold capitalize transition-colors cursor-pointer ${
+                className={`px-3 py-1.5 rounded-lg text-xs font-bold capitalize whitespace-nowrap shrink-0 transition-colors cursor-pointer ${
                   isActive
                     ? 'bg-purple-600 text-white shadow-xs'
                     : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
@@ -401,22 +401,22 @@ export default function ContributionsReviewPage() {
                     Submitted: {c.submittedAt ? new Date(c.submittedAt).toLocaleString() : 'N/A'}
                   </div>
 
-                  <div className="flex items-center gap-2">
+                  <div className="flex flex-wrap items-center gap-2 w-full sm:w-auto">
                     {/* Copy JSON */}
                     <button
                       type="button"
                       onClick={() => handleCopyQuestionJson(c)}
-                      className="px-3 py-1.5 rounded-xl border border-slate-200 bg-white hover:bg-slate-50 text-slate-600 text-xs font-bold inline-flex items-center space-x-1 cursor-pointer transition-colors"
+                      className="flex-1 sm:flex-initial min-h-[40px] px-3.5 py-2 rounded-xl border border-slate-200 bg-white hover:bg-slate-50 text-slate-700 text-xs font-bold inline-flex items-center justify-center space-x-1.5 cursor-pointer transition-colors active:scale-95"
                       title="Copy question as JSON to import into a quiz"
                     >
                       {copiedId === c.id ? (
                         <>
-                          <Check className="w-3.5 h-3.5 text-emerald-600" />
+                          <Check className="w-4 h-4 text-emerald-600" />
                           <span className="text-emerald-700">Copied!</span>
                         </>
                       ) : (
                         <>
-                          <Copy className="w-3.5 h-3.5 text-slate-500" />
+                          <Copy className="w-4 h-4 text-slate-500" />
                           <span>Copy JSON</span>
                         </>
                       )}
@@ -427,13 +427,13 @@ export default function ContributionsReviewPage() {
                       type="button"
                       disabled={isProcessing || c.status === 'approved'}
                       onClick={() => handleUpdateStatus(c.id, 'approved')}
-                      className={`px-3.5 py-1.5 rounded-xl text-xs font-bold inline-flex items-center space-x-1 transition-all cursor-pointer ${
+                      className={`flex-1 sm:flex-initial min-h-[40px] px-4 py-2 rounded-xl text-xs font-bold inline-flex items-center justify-center space-x-1.5 transition-all cursor-pointer active:scale-95 ${
                         c.status === 'approved'
                           ? 'bg-emerald-100 text-emerald-800 opacity-60 cursor-not-allowed'
                           : 'bg-emerald-600 hover:bg-emerald-700 text-white shadow-xs'
                       }`}
                     >
-                      <CheckCircle2 className="w-3.5 h-3.5" />
+                      <CheckCircle2 className="w-4 h-4" />
                       <span>{c.status === 'approved' ? 'Approved' : 'Approve'}</span>
                     </button>
 
@@ -442,13 +442,13 @@ export default function ContributionsReviewPage() {
                       type="button"
                       disabled={isProcessing || c.status === 'rejected'}
                       onClick={() => handleUpdateStatus(c.id, 'rejected')}
-                      className={`px-3.5 py-1.5 rounded-xl text-xs font-bold inline-flex items-center space-x-1 transition-all cursor-pointer ${
+                      className={`flex-1 sm:flex-initial min-h-[40px] px-4 py-2 rounded-xl text-xs font-bold inline-flex items-center justify-center space-x-1.5 transition-all cursor-pointer active:scale-95 ${
                         c.status === 'rejected'
                           ? 'bg-rose-100 text-rose-800 opacity-60 cursor-not-allowed'
                           : 'bg-rose-600 hover:bg-rose-700 text-white shadow-xs'
                       }`}
                     >
-                      <XCircle className="w-3.5 h-3.5" />
+                      <XCircle className="w-4 h-4" />
                       <span>{c.status === 'rejected' ? 'Rejected' : 'Reject'}</span>
                     </button>
 
@@ -458,7 +458,7 @@ export default function ContributionsReviewPage() {
                         type="button"
                         disabled={isProcessing}
                         onClick={() => handleUpdateStatus(c.id, 'pending')}
-                        className="px-2.5 py-1.5 rounded-xl text-slate-500 hover:text-slate-800 text-xs font-medium cursor-pointer"
+                        className="min-h-[40px] px-3 py-2 rounded-xl text-slate-500 hover:text-slate-800 hover:bg-slate-100 text-xs font-semibold cursor-pointer active:scale-95 transition-colors"
                         title="Reset status back to Pending"
                       >
                         Reset

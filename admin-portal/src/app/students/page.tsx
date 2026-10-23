@@ -217,7 +217,75 @@ export default function StudentsDirectoryPage() {
 
       {/* Students Table */}
       <div className="rounded-3xl border border-slate-200 bg-white overflow-hidden shadow-sm">
-        <div className="overflow-x-auto">
+        {/* Mobile Cards (< md) */}
+        <div className="md:hidden divide-y divide-slate-100">
+          {filteredStudents.length > 0 ? (
+            filteredStudents.map((stud, idx) => (
+              <div key={stud.uid} className="p-4 flex flex-col gap-3">
+                <div className="flex items-start justify-between gap-2">
+                  <div className="flex items-center gap-2.5">
+                    <span className="w-7 h-7 rounded-full bg-slate-100 text-slate-700 flex items-center justify-center font-bold text-xs shrink-0">
+                      #{idx + 1}
+                    </span>
+                    <div>
+                      <div className="font-extrabold text-slate-900 text-base">{stud.displayName || 'Student'}</div>
+                      <span className="text-[11px] font-mono text-emerald-800 bg-emerald-50 px-1.5 py-0.5 rounded border border-emerald-200 inline-block font-bold">
+                        {stud.studentId || (stud.uid ? stud.uid.slice(0, 10).toUpperCase() : 'N/A')}
+                      </span>
+                    </div>
+                  </div>
+                  <span className="pill text-xs font-bold bg-slate-50 border border-slate-200 text-slate-600 shrink-0">
+                    {stud.schoolClass || 'Senior Secondary'}
+                  </span>
+                </div>
+
+                <div className="grid grid-cols-3 gap-2 p-2.5 rounded-2xl bg-slate-50 border border-slate-200 text-center text-xs">
+                  <div>
+                    <span className="text-[10px] text-slate-400 font-bold uppercase block">CA Score</span>
+                    <span className="text-sm font-black text-emerald-700">
+                      {(stud.totalCaScore ?? stud.averageScorePercentage ?? 0).toFixed(1)}
+                    </span>
+                  </div>
+                  <div>
+                    <span className="text-[10px] text-slate-400 font-bold uppercase block">Tests</span>
+                    <span className="text-sm font-black text-slate-800">
+                      {stud.completedAssessmentsCount ?? stud.totalAssessmentsTaken ?? 0}
+                    </span>
+                  </div>
+                  <div>
+                    <span className="text-[10px] text-slate-400 font-bold uppercase block">Airtime</span>
+                    <span className="text-xs font-black text-amber-700">
+                      ₦{stud.totalAirtimeWonNgn ?? 0}
+                    </span>
+                  </div>
+                </div>
+
+                <div className="flex items-center justify-between gap-2 pt-0.5">
+                  <div className="flex items-center space-x-1.5 text-xs font-mono text-slate-600">
+                    <Phone className="w-3.5 h-3.5 text-slate-400 shrink-0" />
+                    <span>{stud.phone || 'N/A'}</span>
+                    <span className="text-[11px] text-slate-400 font-sans">({stud.network || 'MTN'})</span>
+                  </div>
+
+                  <button
+                    onClick={() => setSelectedStudent(stud)}
+                    className="px-3 py-1.5 rounded-xl bg-slate-100 hover:bg-emerald-50 hover:text-emerald-800 text-slate-700 font-bold text-xs flex items-center space-x-1 transition-all cursor-pointer border border-slate-200"
+                  >
+                    <Eye className="w-3.5 h-3.5" />
+                    <span>Profile</span>
+                  </button>
+                </div>
+              </div>
+            ))
+          ) : (
+            <div className="p-8 text-center text-slate-400 text-sm">
+              No matching student records found.
+            </div>
+          )}
+        </div>
+
+        {/* Desktop Table (>= md) */}
+        <div className="hidden md:block overflow-x-auto">
           <table className="w-full text-left text-sm text-slate-700">
             <thead className="bg-slate-50 text-xs uppercase font-bold text-slate-500 border-b border-slate-200">
               <tr>
@@ -299,8 +367,8 @@ export default function StudentsDirectoryPage() {
 
       {/* Student Profile Inspection Modal */}
       {selectedStudent && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-xs p-4 overflow-y-auto">
-          <div className="bg-white border border-slate-200 rounded-3xl max-w-2xl w-full p-6 sm:p-8 space-y-6 shadow-2xl animate-in fade-in zoom-in-95 my-8">
+        <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/60 backdrop-blur-xs p-0 sm:p-4 overflow-y-auto">
+          <div className="bg-white border border-slate-200 rounded-b-none sm:rounded-3xl max-w-2xl w-full p-5 sm:p-8 space-y-5 sm:space-y-6 shadow-2xl animate-in slide-in-from-bottom duration-200 my-0 sm:my-8 max-h-[90vh] overflow-y-auto">
             
             {/* Header */}
             <div className="flex items-start justify-between pb-4 border-b border-slate-100">

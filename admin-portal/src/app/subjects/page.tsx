@@ -170,10 +170,10 @@ export default function SubjectsManagementPage() {
           </p>
         </div>
 
-        <div className="flex items-center gap-2 sm:gap-3">
+        <div className="flex items-center gap-2 sm:gap-3 w-full sm:w-auto">
           <button
             onClick={loadSubjects}
-            className="p-2.5 rounded-xl border border-slate-200 bg-white hover:bg-slate-100 text-slate-600 transition-colors shadow-2xs cursor-pointer"
+            className="min-h-[44px] min-w-[44px] p-2.5 rounded-2xl border border-slate-200 bg-white hover:bg-slate-100 text-slate-600 transition-colors shadow-2xs cursor-pointer flex items-center justify-center shrink-0 active:scale-95"
             title="Refresh subjects"
           >
             <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin text-emerald-600' : ''}`} />
@@ -181,7 +181,7 @@ export default function SubjectsManagementPage() {
 
           <button
             onClick={() => setShowModal(true)}
-            className="py-2.5 px-4 rounded-2xl font-bold text-white bg-emerald-600 hover:bg-emerald-700 text-xs sm:text-sm flex items-center gap-1.5 shadow-md shadow-emerald-600/30 active:scale-95 transition-all cursor-pointer"
+            className="flex-1 sm:flex-initial min-h-[44px] py-2.5 px-4 rounded-2xl font-bold text-white bg-emerald-600 hover:bg-emerald-700 text-xs sm:text-sm flex items-center justify-center gap-1.5 shadow-md shadow-emerald-600/30 active:scale-95 transition-all cursor-pointer"
           >
             <Plus className="w-4 h-4" />
             <span>Add New Subject</span>
@@ -246,8 +246,8 @@ export default function SubjectsManagementPage() {
           <div className="divide-y divide-slate-100">
             {subjects.map((s) => (
               <div key={s.id} className="p-4 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 hover:bg-slate-50 transition-colors">
-                <div className="space-y-1">
-                  <div className="flex items-center gap-2">
+                <div className="space-y-1 w-full sm:w-auto">
+                  <div className="flex flex-wrap items-center gap-2">
                     <span className="font-black text-sm text-slate-900">{s.name}</span>
                     <span className="py-0.5 px-2 rounded-lg text-xs font-black uppercase bg-slate-100 text-slate-700 border border-slate-200">
                       {s.shortCode}
@@ -268,7 +268,7 @@ export default function SubjectsManagementPage() {
 
                 <button
                   onClick={() => handleDeleteSubject(s.id, s.name)}
-                  className="p-2 text-rose-500 hover:text-rose-700 hover:bg-rose-50 rounded-xl transition-colors cursor-pointer self-end sm:self-center"
+                  className="min-h-[40px] min-w-[40px] flex items-center justify-center text-rose-500 hover:text-rose-700 hover:bg-rose-50 rounded-xl transition-colors cursor-pointer self-end sm:self-center active:scale-95"
                   title="Delete subject"
                 >
                   <Trash2 className="w-4 h-4" />
@@ -281,11 +281,16 @@ export default function SubjectsManagementPage() {
 
       {/* Create Subject Modal */}
       {showModal && (
-        <div className="fixed inset-0 z-50 bg-slate-900/40 backdrop-blur-xs flex items-center justify-center p-4">
-          <div className="bg-white rounded-3xl max-w-md w-full p-6 shadow-2xl border border-slate-100 space-y-4">
+        <div className="fixed inset-0 z-50 bg-slate-900/40 backdrop-blur-xs flex items-end sm:items-center justify-center p-0 sm:p-4">
+          <div className="bg-white rounded-t-3xl sm:rounded-3xl max-w-md w-full p-6 shadow-2xl border border-slate-100 space-y-4 max-h-[90vh] overflow-y-auto animate-slide-up sm:animate-none">
             <div className="flex items-center justify-between pb-2 border-b border-slate-100">
               <h3 className="font-black text-lg text-slate-900">Create New Curriculum Subject</h3>
-              <button onClick={() => setShowModal(false)} className="text-slate-400 hover:text-slate-600 font-bold">✕</button>
+              <button 
+                onClick={() => setShowModal(false)} 
+                className="w-8 h-8 flex items-center justify-center text-slate-400 hover:text-slate-600 font-bold rounded-full hover:bg-slate-100 transition-colors"
+              >
+                ✕
+              </button>
             </div>
 
             {error && (
