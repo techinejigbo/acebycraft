@@ -541,9 +541,9 @@ function AssessmentFormContent() {
                 key={q.id || qIndex}
                 className="bg-white border border-slate-200 rounded-3xl p-6 space-y-4 shadow-sm relative"
               >
-                <div className="flex items-center justify-between pb-3 border-b border-slate-100">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 pb-3 border-b border-slate-100">
                   <div className="flex items-center space-x-3">
-                    <span className="w-7 h-7 rounded-xl bg-emerald-100 text-emerald-800 text-xs font-black flex items-center justify-center">
+                    <span className="w-7 h-7 rounded-xl bg-emerald-100 text-emerald-800 text-xs font-black flex items-center justify-center shrink-0">
                       {qIndex + 1}
                     </span>
                     <span className="text-xs font-extrabold text-slate-900 uppercase tracking-wider">
@@ -551,19 +551,19 @@ function AssessmentFormContent() {
                     </span>
                   </div>
 
-                  <div className="flex items-center space-x-3">
+                  <div className="flex items-center space-x-2 w-full sm:w-auto justify-between sm:justify-end">
                     <input
                       type="text"
                       placeholder="Topic (e.g. Genetics)"
                       value={q.topic}
                       onChange={(e) => updateQuestion(qIndex, 'topic', e.target.value)}
-                      className="bg-slate-50 border border-slate-200 rounded-lg px-2.5 py-1 text-xs text-slate-800 placeholder-slate-400 w-36 font-medium"
+                      className="bg-slate-50 border border-slate-200 rounded-lg px-2.5 py-1 text-xs text-slate-800 placeholder-slate-400 flex-1 sm:w-36 font-medium"
                     />
 
                     <button
                       type="button"
                       onClick={() => handleRemoveQuestion(qIndex)}
-                      className="p-1.5 rounded-lg text-slate-400 hover:text-rose-600 hover:bg-rose-50 transition-colors cursor-pointer"
+                      className="p-1.5 rounded-lg text-slate-400 hover:text-rose-600 hover:bg-rose-50 transition-colors cursor-pointer shrink-0"
                       title="Delete Question"
                     >
                       <Trash2 className="w-4 h-4" />
@@ -652,16 +652,16 @@ function AssessmentFormContent() {
 
       {/* Bulk JSON/CSV Import Modal */}
       {showBulkModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-xs p-4">
-          <div className="bg-white border border-slate-200 rounded-3xl p-6 sm:p-8 max-w-2xl w-full space-y-4 shadow-2xl">
+        <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/60 backdrop-blur-xs p-0 sm:p-4">
+          <div className="bg-white border border-slate-200 rounded-b-none sm:rounded-3xl p-5 sm:p-8 max-w-2xl w-full space-y-4 shadow-2xl max-h-[85vh] overflow-y-auto animate-in slide-in-from-bottom duration-200">
             <div className="flex items-center justify-between pb-3 border-b border-slate-100">
-              <h3 className="text-lg font-black text-slate-900 flex items-center space-x-2">
+              <h3 className="text-base sm:text-lg font-black text-slate-900 flex items-center space-x-2">
                 <Upload className="w-5 h-5 text-emerald-600" />
                 <span>Bulk Upload Questions</span>
               </h3>
               <button
                 onClick={() => setShowBulkModal(false)}
-                className="text-xs text-slate-500 hover:text-slate-900 font-bold"
+                className="text-xs text-slate-500 hover:text-slate-900 font-bold p-1"
               >
                 ✕ Close
               </button>
@@ -698,18 +698,18 @@ function AssessmentFormContent() {
               </div>
             )}
 
-            <div className="flex justify-end space-x-3 pt-2">
+            <div className="flex flex-col-reverse sm:flex-row justify-end gap-2 pt-2">
               <button
                 type="button"
                 onClick={() => setShowBulkModal(false)}
-                className="px-4 py-2 rounded-xl bg-slate-100 text-slate-700 text-xs font-bold hover:bg-slate-200 cursor-pointer"
+                className="w-full sm:w-auto px-4 py-2.5 rounded-xl bg-slate-100 text-slate-700 text-xs font-bold hover:bg-slate-200 cursor-pointer"
               >
                 Cancel
               </button>
               <button
                 type="button"
                 onClick={handleBulkImport}
-                className="px-5 py-2 rounded-2xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold transition-all shadow-md cursor-pointer"
+                className="w-full sm:w-auto px-5 py-2.5 rounded-2xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold transition-all shadow-md cursor-pointer"
               >
                 Validate & Import Questions
               </button>

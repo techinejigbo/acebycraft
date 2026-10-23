@@ -207,85 +207,151 @@ export default function SchoolsManagementPage() {
             </p>
           </div>
         ) : (
-          <div className="overflow-x-auto">
-            <table className="w-full text-left text-sm">
-              <thead className="bg-slate-50 text-slate-500 font-bold border-b border-slate-200 text-xs uppercase tracking-wider">
-                <tr>
-                  <th className="p-4">School Details</th>
-                  <th className="p-4">Code</th>
-                  <th className="p-4">Location</th>
-                  <th className="p-4">Access Passcode</th>
-                  <th className="p-4">Contact</th>
-                  <th className="p-4 text-right">Actions</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-slate-100">
-                {schools.map((s) => (
-                  <tr key={s.id} className="hover:bg-slate-50 transition-colors">
-                    <td className="p-4">
-                      <div className="font-black text-slate-900">{s.name}</div>
-                      <div className="text-[10px] text-slate-400">ID: {s.id}</div>
-                    </td>
-                    <td className="p-4">
-                      <span className="py-1 px-2.5 rounded-lg text-xs font-black uppercase bg-sky-50 text-sky-700 border border-sky-200">
-                        {s.code}
+          <div>
+            {/* Mobile Cards (< md) */}
+            <div className="md:hidden divide-y divide-slate-100">
+              {schools.map((s) => (
+                <div key={s.id} className="p-4 flex flex-col gap-3">
+                  <div className="flex items-start justify-between gap-2">
+                    <div>
+                      <div className="font-black text-slate-900 text-base">{s.name}</div>
+                      <div className="text-xs text-slate-500 font-bold">{s.lga}, {s.state} State</div>
+                    </div>
+                    <span className="py-1 px-2.5 rounded-lg text-xs font-black uppercase bg-sky-50 text-sky-700 border border-sky-200 shrink-0">
+                      {s.code}
+                    </span>
+                  </div>
+
+                  <div className="p-2.5 rounded-xl bg-slate-50 border border-slate-200 flex items-center justify-between text-xs">
+                    <div className="flex items-center gap-1.5 font-mono">
+                      <Key className="w-3.5 h-3.5 text-amber-500 shrink-0" />
+                      <span className="font-bold text-slate-700">Passcode:</span>
+                      <span className="font-black text-slate-900">
+                        {visiblePasscodes[s.id] ? s.passcode : '••••••••'}
                       </span>
-                    </td>
-                    <td className="p-4">
-                      <div className="font-bold text-xs text-slate-700">{s.lga}</div>
-                      <div className="text-[11px] text-slate-400">{s.state} State</div>
-                    </td>
-                    <td className="p-4">
-                      <div className="flex items-center gap-1.5 font-mono text-xs">
-                        <Key className="w-3.5 h-3.5 text-amber-500" />
-                        <span className="font-black text-slate-800">
-                          {visiblePasscodes[s.id] ? s.passcode : '••••••••'}
-                        </span>
-                        <button
-                          onClick={() => togglePasscode(s.id)}
-                          className="p-1 text-slate-400 hover:text-slate-600 rounded cursor-pointer"
-                          title="Toggle passcode visibility"
-                        >
-                          {visiblePasscodes[s.id] ? <EyeOff className="w-3.5 h-3.5" /> : <Eye className="w-3.5 h-3.5" />}
-                        </button>
-                      </div>
-                    </td>
-                    <td className="p-4 text-xs text-slate-500">
-                      <div>{s.contactEmail || 'No email registered'}</div>
-                      <div className="text-[11px] text-slate-400">{s.contactPhone}</div>
-                    </td>
-                    <td className="p-4 text-right space-x-2">
-                      <button
-                        onClick={() => copyCredentials(s)}
-                        className="py-1.5 px-2.5 rounded-xl text-xs font-bold bg-slate-100 hover:bg-slate-200 text-slate-700 transition-colors cursor-pointer"
-                        title="Copy Login Credentials"
-                      >
-                        {copiedId === s.id ? (
-                          <span className="flex items-center gap-1 text-emerald-600 font-black"><Check className="w-3 h-3" /> Copied</span>
-                        ) : (
-                          <span className="flex items-center gap-1"><Copy className="w-3 h-3" /> Copy</span>
-                        )}
-                      </button>
-                      <button
-                        onClick={() => handleDeleteSchool(s.id, s.name)}
-                        className="p-1.5 text-rose-500 hover:text-rose-700 hover:bg-rose-50 rounded-xl transition-colors cursor-pointer"
-                        title="Revoke school access"
-                      >
-                        <Trash2 className="w-4 h-4" />
-                      </button>
-                    </td>
+                    </div>
+
+                    <button
+                      onClick={() => togglePasscode(s.id)}
+                      className="p-1 text-slate-400 hover:text-slate-600 rounded cursor-pointer"
+                      title="Toggle passcode visibility"
+                    >
+                      {visiblePasscodes[s.id] ? <EyeOff className="w-3.5 h-3.5" /> : <Eye className="w-3.5 h-3.5" />}
+                    </button>
+                  </div>
+
+                  {s.contactEmail && (
+                    <div className="text-xs text-slate-500">
+                      <div>{s.contactEmail}</div>
+                      {s.contactPhone && <div className="text-[11px] text-slate-400 font-mono">{s.contactPhone}</div>}
+                    </div>
+                  )}
+
+                  <div className="flex items-center justify-between gap-2 pt-1">
+                    <button
+                      onClick={() => copyCredentials(s)}
+                      className="flex-1 py-2 px-3 rounded-xl text-xs font-bold bg-slate-100 hover:bg-slate-200 text-slate-700 transition-colors cursor-pointer flex items-center justify-center gap-1.5"
+                    >
+                      {copiedId === s.id ? (
+                        <span className="flex items-center gap-1 text-emerald-600 font-black"><Check className="w-3.5 h-3.5" /> Copied</span>
+                      ) : (
+                        <span className="flex items-center gap-1"><Copy className="w-3.5 h-3.5" /> Copy Login</span>
+                      )}
+                    </button>
+
+                    <button
+                      onClick={() => handleDeleteSchool(s.id, s.name)}
+                      className="p-2 text-rose-500 hover:text-rose-700 hover:bg-rose-50 rounded-xl transition-colors cursor-pointer border border-rose-200"
+                      title="Revoke school access"
+                    >
+                      <Trash2 className="w-4 h-4" />
+                    </button>
+                  </div>
+                </div>
+              ))}
+            </div>
+
+            {/* Desktop Table (>= md) */}
+            <div className="hidden md:block overflow-x-auto">
+              <table className="w-full text-left text-sm">
+                <thead className="bg-slate-50 text-slate-500 font-bold border-b border-slate-200 text-xs uppercase tracking-wider">
+                  <tr>
+                    <th className="p-4">School Details</th>
+                    <th className="p-4">Code</th>
+                    <th className="p-4">Location</th>
+                    <th className="p-4">Access Passcode</th>
+                    <th className="p-4">Contact</th>
+                    <th className="p-4 text-right">Actions</th>
                   </tr>
-                ))}
-              </tbody>
-            </table>
+                </thead>
+                <tbody className="divide-y divide-slate-100">
+                  {schools.map((s) => (
+                    <tr key={s.id} className="hover:bg-slate-50 transition-colors">
+                      <td className="p-4">
+                        <div className="font-black text-slate-900">{s.name}</div>
+                        <div className="text-[10px] text-slate-400">ID: {s.id}</div>
+                      </td>
+                      <td className="p-4">
+                        <span className="py-1 px-2.5 rounded-lg text-xs font-black uppercase bg-sky-50 text-sky-700 border border-sky-200">
+                          {s.code}
+                        </span>
+                      </td>
+                      <td className="p-4">
+                        <div className="font-bold text-xs text-slate-700">{s.lga}</div>
+                        <div className="text-[11px] text-slate-400">{s.state} State</div>
+                      </td>
+                      <td className="p-4">
+                        <div className="flex items-center gap-1.5 font-mono text-xs">
+                          <Key className="w-3.5 h-3.5 text-amber-500" />
+                          <span className="font-black text-slate-800">
+                            {visiblePasscodes[s.id] ? s.passcode : '••••••••'}
+                          </span>
+                          <button
+                            onClick={() => togglePasscode(s.id)}
+                            className="p-1 text-slate-400 hover:text-slate-600 rounded cursor-pointer"
+                            title="Toggle passcode visibility"
+                          >
+                            {visiblePasscodes[s.id] ? <EyeOff className="w-3.5 h-3.5" /> : <Eye className="w-3.5 h-3.5" />}
+                          </button>
+                        </div>
+                      </td>
+                      <td className="p-4 text-xs text-slate-500">
+                        <div>{s.contactEmail || 'No email registered'}</div>
+                        <div className="text-[11px] text-slate-400">{s.contactPhone}</div>
+                      </td>
+                      <td className="p-4 text-right space-x-2">
+                        <button
+                          onClick={() => copyCredentials(s)}
+                          className="py-1.5 px-2.5 rounded-xl text-xs font-bold bg-slate-100 hover:bg-slate-200 text-slate-700 transition-colors cursor-pointer"
+                          title="Copy Login Credentials"
+                        >
+                          {copiedId === s.id ? (
+                            <span className="flex items-center gap-1 text-emerald-600 font-black"><Check className="w-3 h-3" /> Copied</span>
+                          ) : (
+                            <span className="flex items-center gap-1"><Copy className="w-3 h-3" /> Copy</span>
+                          )}
+                        </button>
+                        <button
+                          onClick={() => handleDeleteSchool(s.id, s.name)}
+                          className="p-1.5 text-rose-500 hover:text-rose-700 hover:bg-rose-50 rounded-xl transition-colors cursor-pointer"
+                          title="Revoke school access"
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </button>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
           </div>
         )}
       </div>
 
       {/* Onboard School Modal */}
       {showModal && (
-        <div className="fixed inset-0 z-50 bg-slate-900/40 backdrop-blur-xs flex items-center justify-center p-4">
-          <div className="bg-white rounded-3xl max-w-lg w-full p-6 shadow-2xl border border-slate-100 space-y-4">
+        <div className="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-xs flex items-end sm:items-center justify-center p-0 sm:p-4">
+          <div className="bg-white rounded-b-none sm:rounded-3xl max-w-lg w-full p-5 sm:p-6 shadow-2xl border border-slate-100 space-y-4 max-h-[90vh] overflow-y-auto animate-in slide-in-from-bottom duration-200">
             <div className="flex items-center justify-between pb-2 border-b border-slate-100">
               <h3 className="font-black text-lg text-slate-900">Onboard New Secondary Institution</h3>
               <button onClick={() => setShowModal(false)} className="text-slate-400 hover:text-slate-600 font-bold">✕</button>

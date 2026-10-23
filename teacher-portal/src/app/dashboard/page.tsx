@@ -314,14 +314,14 @@ export default function TeacherDashboardPage() {
   const pendingCount = questions.filter((q) => q.status === 'pending').length;
 
   return (
-    <div className="max-w-5xl mx-auto px-4 py-8 flex flex-col gap-6">
+    <div className="max-w-5xl mx-auto px-3 sm:px-4 py-6 sm:py-8 flex flex-col gap-6">
       {/* Top Banner */}
-      <div className="card card-green flex flex-col sm:flex-row items-center justify-between gap-4 p-6">
-        <div className="flex items-center gap-4 text-center sm:text-left">
-          <Mascot size={80} mood="happy" />
+      <div className="card card-green flex flex-col sm:flex-row items-center justify-between gap-4 p-5 sm:p-6">
+        <div className="flex flex-col sm:flex-row items-center sm:items-start gap-3 sm:gap-4 text-center sm:text-left">
+          <Mascot size={70} mood="happy" className="shrink-0" />
           <div>
             <div className="text-xs font-bold text-[var(--wolf)]">{teacher.affiliation}</div>
-            <h1 className="text-2xl sm:text-3xl font-black text-[var(--feather-shadow)] mt-1">
+            <h1 className="text-xl sm:text-3xl font-black text-[var(--feather-shadow)] mt-0.5 sm:mt-1">
               Welcome, {teacher.name}!
             </h1>
             <p className="text-xs sm:text-sm text-[var(--wolf)] font-bold">
@@ -330,71 +330,78 @@ export default function TeacherDashboardPage() {
           </div>
         </div>
 
-        <div className="flex flex-wrap gap-2">
+        {/* Scrollable Tab Controls */}
+        <div className="flex items-center gap-2 overflow-x-auto pb-1 max-w-full no-scrollbar w-full sm:w-auto">
           <button
             onClick={() => setActiveTab('batch')}
-            className={`btn text-xs font-black !py-2.5 !px-4 ${activeTab === 'batch' ? 'btn-blue' : 'btn-outline'}`}
+            className={`btn text-xs font-black !py-2.5 !px-3.5 whitespace-nowrap shrink-0 ${activeTab === 'batch' ? 'btn-blue' : 'btn-outline'}`}
           >
             <Sparkles className="w-4 h-4" /> Batch Studio
           </button>
           <button
             onClick={() => setActiveTab('author')}
-            className={`btn text-xs font-black !py-2.5 !px-4 ${activeTab === 'author' ? 'btn-blue' : 'btn-outline'}`}
+            className={`btn text-xs font-black !py-2.5 !px-3.5 whitespace-nowrap shrink-0 ${activeTab === 'author' ? 'btn-blue' : 'btn-outline'}`}
           >
             <PlusCircle className="w-4 h-4" /> Single Question
           </button>
           <button
             onClick={() => setActiveTab('ledger')}
-            className={`btn text-xs font-black !py-2.5 !px-4 ${activeTab === 'ledger' ? 'btn-blue' : 'btn-outline'}`}
+            className={`btn text-xs font-black !py-2.5 !px-3.5 whitespace-nowrap shrink-0 ${activeTab === 'ledger' ? 'btn-blue' : 'btn-outline'}`}
           >
-            <Layers className="w-4 h-4" /> My Submissions ({questions.length})
+            <Layers className="w-4 h-4" /> Submissions ({questions.length})
+          </button>
+          <button
+            onClick={() => setActiveTab('bulk')}
+            className={`btn text-xs font-black !py-2.5 !px-3.5 whitespace-nowrap shrink-0 ${activeTab === 'bulk' ? 'btn-yellow' : 'btn-outline'}`}
+          >
+            <Upload className="w-4 h-4" /> Bulk JSON
           </button>
         </div>
       </div>
 
       {/* KPI Cards */}
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-        <div className="card text-center p-4">
+        <div className="card text-center p-3.5 sm:p-4">
           <div className="text-xs font-black text-[var(--wolf)] uppercase">Total Contributed</div>
-          <div className="text-3xl font-black text-[var(--macaw)] mt-1">{questions.length}</div>
+          <div className="text-2xl sm:text-3xl font-black text-[var(--macaw)] mt-1">{questions.length}</div>
           <div className="text-xs font-bold text-[var(--hare)] mt-0.5">Author submissions</div>
         </div>
-        <div className="card text-center p-4">
+        <div className="card text-center p-3.5 sm:p-4">
           <div className="text-xs font-black text-[var(--wolf)] uppercase">Approved</div>
-          <div className="text-3xl font-black text-[var(--feather)] mt-1">{approvedCount}</div>
+          <div className="text-2xl sm:text-3xl font-black text-[var(--feather)] mt-1">{approvedCount}</div>
           <div className="text-xs font-bold text-[var(--hare)] mt-0.5">Active in assessments</div>
         </div>
-        <div className="card text-center p-4">
+        <div className="card text-center p-3.5 sm:p-4">
           <div className="text-xs font-black text-[var(--wolf)] uppercase">Under Review</div>
-          <div className="text-3xl font-black text-[var(--fox)] mt-1">{pendingCount}</div>
+          <div className="text-2xl sm:text-3xl font-black text-[var(--fox)] mt-1">{pendingCount}</div>
           <div className="text-xs font-bold text-[var(--hare)] mt-0.5">Pending curation</div>
         </div>
       </div>
 
       {/* Tab 0: Batch 10-Question Authoring Studio */}
       {activeTab === 'batch' && (
-        <div className="card p-6 shadow-sm space-y-6">
+        <div className="card p-4 sm:p-6 shadow-sm space-y-6">
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-4 border-b border-[var(--swan)]">
             <div>
-              <h2 className="text-xl font-black text-[var(--eel)]">Multi-Question Batch Studio</h2>
+              <h2 className="text-lg sm:text-xl font-black text-[var(--eel)]">Multi-Question Batch Studio</h2>
               <p className="text-xs text-[var(--wolf)] mt-0.5">
                 Author curriculum-aligned 4-option objective questions with step-by-step explanations.
               </p>
             </div>
 
-            <div className="flex items-center gap-2">
+            <div className="flex flex-wrap items-center gap-2">
               <button
                 type="button"
                 onClick={handlePreloadTen}
-                className="btn btn-outline text-xs font-black flex items-center gap-1.5"
+                className="btn btn-outline text-xs font-black flex items-center gap-1.5 !py-2 !px-3"
                 title="Populate 10 question slots ready for authoring"
               >
-                <Sparkles className="w-4 h-4 text-[var(--macaw)]" /> Prefill 10 Question Cards
+                <Sparkles className="w-4 h-4 text-[var(--macaw)]" /> Prefill 10 Cards
               </button>
               <button
                 type="button"
                 onClick={handleAddBatchItem}
-                className="btn btn-blue text-xs font-black flex items-center gap-1.5"
+                className="btn btn-blue text-xs font-black flex items-center gap-1.5 !py-2 !px-3"
               >
                 <Plus className="w-4 h-4" /> Add Card
               </button>
@@ -403,13 +410,13 @@ export default function TeacherDashboardPage() {
 
           {successMsg && (
             <div className="card card-green text-sm p-4 font-bold flex items-center gap-2">
-              <CheckCircle2 className="w-5 h-5 text-[var(--feather-shadow)]" /> {successMsg}
+              <CheckCircle2 className="w-5 h-5 text-[var(--feather-shadow)] shrink-0" /> {successMsg}
             </div>
           )}
 
           <form onSubmit={handleSubmitBatch} className="space-y-6">
             {/* Global Batch Settings */}
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 p-4 bg-[var(--polar)] rounded-2xl border border-[var(--swan)]">
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 p-3.5 sm:p-4 bg-[var(--polar)] rounded-2xl border border-[var(--swan)]">
               <div>
                 <label className="label">Subject</label>
                 {availableSubjects.length > 0 ? (
@@ -463,20 +470,20 @@ export default function TeacherDashboardPage() {
             {/* List of Question Cards */}
             <div className="space-y-4">
               {batchItems.map((item, idx) => (
-                <div key={idx} className="p-5 border-2 border-[var(--swan)] rounded-2xl bg-white space-y-3 relative hover:border-[var(--macaw)] transition-colors">
-                  <div className="flex items-center justify-between pb-2 border-b border-[var(--swan)]">
+                <div key={idx} className="p-4 sm:p-5 border-2 border-[var(--swan)] rounded-2xl bg-white space-y-3 relative hover:border-[var(--macaw)] transition-colors">
+                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 pb-2 border-b border-[var(--swan)]">
                     <div className="flex items-center gap-2">
-                      <span className="w-7 h-7 rounded-full bg-[var(--polar)] border border-[var(--swan)] flex items-center justify-center font-black text-xs text-[var(--eel)]">
+                      <span className="w-7 h-7 rounded-full bg-[var(--polar)] border border-[var(--swan)] flex items-center justify-center font-black text-xs text-[var(--eel)] shrink-0">
                         {idx + 1}
                       </span>
-                      <span className="font-black text-sm text-[var(--eel)]">Question {idx + 1}</span>
+                      <span className="font-black text-sm text-[var(--eel)]">Question #{idx + 1}</span>
                     </div>
 
-                    <div className="flex items-center gap-2">
+                    <div className="flex items-center gap-2 w-full sm:w-auto justify-between sm:justify-end">
                       <input
                         type="text"
                         placeholder="Specific Topic (optional)"
-                        className="input !py-1 !px-2 text-xs w-44 font-medium"
+                        className="input !py-1.5 !px-2.5 text-xs flex-1 sm:w-48 font-medium"
                         value={item.topic}
                         onChange={(e) => handleUpdateBatchItem(idx, 'topic', e.target.value)}
                       />
@@ -484,8 +491,9 @@ export default function TeacherDashboardPage() {
                         <button
                           type="button"
                           onClick={() => handleRemoveBatchItem(idx)}
-                          className="p-1.5 text-rose-500 hover:bg-rose-50 rounded-lg transition-colors cursor-pointer"
+                          className="p-2 text-rose-500 hover:bg-rose-50 rounded-lg transition-colors cursor-pointer shrink-0"
                           title="Remove question card"
+                          aria-label="Remove question"
                         >
                           <Trash2 className="w-4 h-4" />
                         </button>
@@ -509,25 +517,31 @@ export default function TeacherDashboardPage() {
                     {(['A', 'B', 'C', 'D'] as const).map((optKey) => {
                       const val = optKey === 'A' ? item.optA : optKey === 'B' ? item.optB : optKey === 'C' ? item.optC : item.optD;
                       const field = optKey === 'A' ? 'optA' : optKey === 'B' ? 'optB' : optKey === 'C' ? 'optC' : 'optD';
+                      const isCorrect = item.correctOption === optKey;
                       return (
-                        <div key={optKey}>
-                          <div className="flex items-center justify-between mb-1">
-                            <label className="label !mb-0 text-xs">Option {optKey}</label>
-                            <label className="text-xs font-black cursor-pointer text-[var(--macaw)] flex items-center gap-1">
+                        <div key={optKey} className="space-y-1">
+                          <div className="flex items-center justify-between">
+                            <label className="label !mb-0 text-xs font-black">Option {optKey}</label>
+                            <label className={`text-xs font-black cursor-pointer px-2 py-1 rounded-lg border transition-colors flex items-center gap-1.5 ${
+                              isCorrect
+                                ? 'bg-emerald-50 border-[var(--brand-green)] text-[var(--brand-green-shadow)] font-black'
+                                : 'bg-[var(--polar)] border-[var(--swan)] text-[var(--wolf)] hover:text-[var(--eel)]'
+                            }`}>
                               <input
                                 type="radio"
                                 name={`correct-${idx}`}
-                                checked={item.correctOption === optKey}
+                                className="w-3.5 h-3.5 accent-[var(--brand-green)]"
+                                checked={isCorrect}
                                 onChange={() => handleUpdateBatchItem(idx, 'correctOption', optKey)}
                               />
-                              Correct
+                              {isCorrect ? '✓ Correct' : 'Mark Correct'}
                             </label>
                           </div>
                           <input
                             type="text"
                             required
-                            className="input text-xs"
-                            placeholder={`Option ${optKey} text`}
+                            className="input text-sm"
+                            placeholder={`Option ${optKey} content`}
                             value={val}
                             onChange={(e) => handleUpdateBatchItem(idx, field, e.target.value)}
                           />
@@ -540,7 +554,7 @@ export default function TeacherDashboardPage() {
                     <label className="label !mb-1 text-xs">Pedagogical Explanation & Remediation Guide *</label>
                     <input
                       type="text"
-                      className="input text-xs"
+                      className="input text-sm"
                       placeholder="Walk student step-by-step through solving this question..."
                       value={item.explanation}
                       onChange={(e) => handleUpdateBatchItem(idx, 'explanation', e.target.value)}
@@ -651,101 +665,44 @@ export default function TeacherDashboardPage() {
             </div>
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-              <div>
-                <div className="flex items-center justify-between mb-1">
-                  <label className="label !mb-0">Option A</label>
-                  <label className="text-xs font-black cursor-pointer text-[var(--macaw)] flex items-center gap-1">
+              {(['A', 'B', 'C', 'D'] as const).map((optKey) => {
+                const isCorrect = correctOption === optKey;
+                const val = optKey === 'A' ? optA : optKey === 'B' ? optB : optKey === 'C' ? optC : optD;
+                const setter = optKey === 'A' ? setOptA : optKey === 'B' ? setOptB : optKey === 'C' ? setOptC : setOptD;
+                return (
+                  <div key={optKey} className="space-y-1">
+                    <div className="flex items-center justify-between">
+                      <label className="label !mb-0 text-xs font-black">Option {optKey}</label>
+                      <label className={`text-xs font-black cursor-pointer px-2 py-1 rounded-lg border transition-colors flex items-center gap-1.5 ${
+                        isCorrect
+                          ? 'bg-emerald-50 border-[var(--brand-green)] text-[var(--brand-green-shadow)] font-black'
+                          : 'bg-[var(--polar)] border-[var(--swan)] text-[var(--wolf)] hover:text-[var(--eel)]'
+                      }`}>
+                        <input
+                          type="radio"
+                          name="correct"
+                          className="w-3.5 h-3.5 accent-[var(--brand-green)]"
+                          checked={isCorrect}
+                          onChange={() => setCorrectOption(optKey)}
+                        />
+                        {isCorrect ? '✓ Correct' : 'Mark Correct'}
+                      </label>
+                    </div>
                     <input
-                      type="radio"
-                      name="correct"
-                      checked={correctOption === 'A'}
-                      onChange={() => setCorrectOption('A')}
+                      type="text"
+                      required
+                      className="input text-sm"
+                      placeholder={`Option ${optKey} content`}
+                      value={val}
+                      onChange={(e) => setter(e.target.value)}
                     />
-                    Correct
-                  </label>
-                </div>
-                <input
-                  type="text"
-                  required
-                  className="input"
-                  placeholder="Option A content"
-                  value={optA}
-                  onChange={(e) => setOptA(e.target.value)}
-                />
-              </div>
-
-              <div>
-                <div className="flex items-center justify-between mb-1">
-                  <label className="label !mb-0">Option B</label>
-                  <label className="text-xs font-black cursor-pointer text-[var(--macaw)] flex items-center gap-1">
-                    <input
-                      type="radio"
-                      name="correct"
-                      checked={correctOption === 'B'}
-                      onChange={() => setCorrectOption('B')}
-                    />
-                    Correct
-                  </label>
-                </div>
-                <input
-                  type="text"
-                  required
-                  className="input"
-                  placeholder="Option B content"
-                  value={optB}
-                  onChange={(e) => setOptB(e.target.value)}
-                />
-              </div>
-
-              <div>
-                <div className="flex items-center justify-between mb-1">
-                  <label className="label !mb-0">Option C</label>
-                  <label className="text-xs font-black cursor-pointer text-[var(--macaw)] flex items-center gap-1">
-                    <input
-                      type="radio"
-                      name="correct"
-                      checked={correctOption === 'C'}
-                      onChange={() => setCorrectOption('C')}
-                    />
-                    Correct
-                  </label>
-                </div>
-                <input
-                  type="text"
-                  required
-                  className="input"
-                  placeholder="Option C content"
-                  value={optC}
-                  onChange={(e) => setOptC(e.target.value)}
-                />
-              </div>
-
-              <div>
-                <div className="flex items-center justify-between mb-1">
-                  <label className="label !mb-0">Option D</label>
-                  <label className="text-xs font-black cursor-pointer text-[var(--macaw)] flex items-center gap-1">
-                    <input
-                      type="radio"
-                      name="correct"
-                      checked={correctOption === 'D'}
-                      onChange={() => setCorrectOption('D')}
-                    />
-                    Correct
-                  </label>
-                </div>
-                <input
-                  type="text"
-                  required
-                  className="input"
-                  placeholder="Option D content"
-                  value={optD}
-                  onChange={(e) => setOptD(e.target.value)}
-                />
-              </div>
+                  </div>
+                );
+              })}
             </div>
 
             <div>
-              <div className="flex items-center justify-between mb-1">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-1 mb-1">
                 <label className="label !mb-0">
                   Pedagogical Explanation & Remediation Guide <span className="text-[var(--cardinal)]">*</span>
                 </label>
@@ -756,7 +713,7 @@ export default function TeacherDashboardPage() {
               <textarea
                 required
                 rows={3}
-                className="input font-medium"
+                className="input font-medium text-sm"
                 placeholder="Walk the student step-by-step through solving this question, explaining common misconceptions..."
                 value={explanation}
                 onChange={(e) => setExplanation(e.target.value)}
@@ -773,21 +730,21 @@ export default function TeacherDashboardPage() {
       {/* Tab 2: Question Submissions Ledger */}
       {activeTab === 'ledger' && (
         <div className="card p-0 overflow-hidden shadow-sm">
-          <div className="p-4 border-b border-[var(--swan)] bg-[var(--polar)] flex items-center justify-between">
+          <div className="p-4 border-b border-[var(--swan)] bg-[var(--polar)] flex flex-col sm:flex-row sm:items-center justify-between gap-1">
             <h3 className="font-black text-base text-[var(--eel)]">Your Question Contributions</h3>
             <span className="text-xs text-[var(--wolf)] font-bold">{questions.length} total questions logged</span>
           </div>
 
           {questions.length === 0 ? (
-            <div className="p-12 text-center text-[var(--wolf)]">
+            <div className="p-8 sm:p-12 text-center text-[var(--wolf)]">
               <p className="font-bold text-sm">No question contributions found.</p>
               <p className="text-xs mt-1">Submit your first question via the "Author Single Question" tab or import in bulk.</p>
             </div>
           ) : (
             <div className="divide-y divide-[var(--swan)]">
               {questions.map((q) => (
-                <div key={q.id} className="p-4 flex flex-col sm:flex-row items-start justify-between gap-3 hover:bg-[var(--polar)] transition-colors">
-                  <div className="space-y-1 max-w-2xl">
+                <div key={q.id} className="p-4 flex flex-col items-start gap-3 hover:bg-[var(--polar)] transition-colors">
+                  <div className="w-full flex items-center justify-between gap-2">
                     <div className="flex flex-wrap items-center gap-2">
                       <span className="pill text-xs font-black bg-[var(--polar)] border border-[var(--swan)]">
                         {q.subjectName}
@@ -795,30 +752,33 @@ export default function TeacherDashboardPage() {
                       <span className="text-xs font-bold text-[var(--wolf)]">
                         {q.topic} • {q.classLevel}
                       </span>
-                      <span className="text-xs text-[var(--hare)]">{q.submittedAt}</span>
                     </div>
 
+                    <div className="shrink-0">
+                      {q.status === 'approved' ? (
+                        <span className="pill text-xs font-black" style={{ background: '#d7ffb8', color: 'var(--feather-shadow)' }}>
+                          ✓ Live
+                        </span>
+                      ) : (
+                        <span className="pill text-xs font-black" style={{ background: '#fff5cc', color: 'var(--fox)' }}>
+                          ⏳ Review
+                        </span>
+                      )}
+                    </div>
+                  </div>
+
+                  <div className="space-y-1.5 w-full">
                     <p className="font-bold text-sm text-[var(--eel)]">{q.question}</p>
 
                     <div className="text-xs text-[var(--wolf)]">
                       <b>Correct Option:</b> <span className="font-black text-[var(--feather-shadow)]">{q.correctOption}</span> — {q.options[q.correctOption]}
                     </div>
 
-                    <div className="text-xs text-[var(--wolf)] bg-white p-2 rounded-lg border border-[var(--swan)]">
+                    <div className="text-xs text-[var(--wolf)] bg-white p-2.5 rounded-lg border border-[var(--swan)]">
                       <b>Explanation:</b> {q.explanation}
                     </div>
-                  </div>
 
-                  <div className="self-end sm:self-center flex-shrink-0">
-                    {q.status === 'approved' ? (
-                      <span className="pill text-xs font-black" style={{ background: '#d7ffb8', color: 'var(--feather-shadow)' }}>
-                        ✓ Live in Active Assessment
-                      </span>
-                    ) : (
-                      <span className="pill text-xs font-black" style={{ background: '#fff5cc', color: 'var(--fox)' }}>
-                        ⏳ Pending IT Review
-                      </span>
-                    )}
+                    <div className="text-[11px] text-[var(--hare)] pt-0.5">{q.submittedAt}</div>
                   </div>
                 </div>
               ))}

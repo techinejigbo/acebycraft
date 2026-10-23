@@ -203,13 +203,59 @@ ${winners.map((w, i) => `${i + 1}. ${w.studentName} (${w.schoolName}) — ${w.av
 
       {tab === 'students' && (
         <div className="card">
-          <div className="flex flex-wrap gap-3 mb-4">
-            <input className="input flex-1 min-w-48" placeholder="Search student…" value={q} onChange={(e) => setQ(e.target.value)} />
-            <select className="input !w-auto" value={cls} onChange={(e) => setCls(e.target.value)}>
+          <div className="flex flex-col sm:flex-row gap-3 mb-4">
+            <input className="input flex-1" placeholder="Search student…" value={q} onChange={(e) => setQ(e.target.value)} />
+            <select className="input !w-full sm:!w-auto" value={cls} onChange={(e) => setCls(e.target.value)}>
               {['ALL', 'SS 1', 'SS 2', 'SS 3'].map((c) => <option key={c}>{c}</option>)}
             </select>
           </div>
-          <div className="overflow-x-auto">
+
+          {/* Mobile Student Cards (< md) */}
+          <div className="md:hidden divide-y divide-[var(--swan)]">
+            {filtered.length > 0 ? (
+              filtered.map((r) => (
+                <div key={r.id} className="py-3.5 flex flex-col gap-2">
+                  <div className="flex items-start justify-between gap-2">
+                    <div>
+                      <div className="font-black text-sm text-[var(--eel)]">{r.studentName}</div>
+                      <div className="text-xs text-[var(--wolf)]">{r.schoolName}</div>
+                    </div>
+                    <span className="pill text-xs font-bold bg-[var(--polar)] border border-[var(--swan)] shrink-0">
+                      {r.schoolClass}
+                    </span>
+                  </div>
+
+                  <div className="grid grid-cols-3 gap-2 bg-[var(--polar)] p-2 rounded-xl text-center text-xs">
+                    <div>
+                      <span className="text-[10px] uppercase font-bold text-[var(--wolf)] block">Score</span>
+                      <span className="font-black text-[var(--eel)]">{r.totalCorrect}/90</span>
+                    </div>
+                    <div>
+                      <span className="text-[10px] uppercase font-bold text-[var(--wolf)] block">Average</span>
+                      <span className="font-black text-emerald-700">{r.averagePercentage}%</span>
+                    </div>
+                    <div>
+                      <span className="text-[10px] uppercase font-bold text-[var(--wolf)] block">Time</span>
+                      <span className="font-mono text-slate-700">{fmt(r.totalTimeSpentSeconds)}</span>
+                    </div>
+                  </div>
+
+                  <div className="pt-1 flex items-center justify-between">
+                    <span className="pill text-xs font-black" style={r.averagePercentage >= cutoff ? { background: '#fff5cc', color: 'var(--fox)' } : { background: 'var(--polar)', color: 'var(--wolf)' }}>
+                      {r.averagePercentage >= cutoff ? '⚡ Eligible (80%+)' : 'Below Cutoff'}
+                    </span>
+                  </div>
+                </div>
+              ))
+            ) : (
+              <div className="py-8 text-center text-[var(--wolf)] font-bold text-sm">
+                No student submissions recorded yet for this cycle.
+              </div>
+            )}
+          </div>
+
+          {/* Desktop Table (>= md) */}
+          <div className="hidden md:block overflow-x-auto">
             <table className="w-full text-left">
               <thead>
                 <tr className="label"><th className="py-2">Student</th><th>Class</th><th>Correct</th><th>Average</th><th>Time</th><th>Status</th></tr>
@@ -261,19 +307,42 @@ ${winners.map((w, i) => `${i + 1}. ${w.studentName} (${w.schoolName}) — ${w.av
             </button>
           </div>
           <pre className="card whitespace-pre-wrap text-sm !bg-[var(--polar)] font-sans">{broadcast}</pre>
-          <div className="card overflow-x-auto">
+          <div className="card">
             <h3 className="text-lg mb-3">Airtime queue</h3>
-            <table className="w-full text-left">
-              <thead><tr className="label"><th>#</th><th>Student</th><th>Phone</th><th>Network</th><th>Score</th><th>Time</th><th>Airtime</th></tr></thead>
-              <tbody>
-                {winners.map((w, i) => (
-                  <tr key={w.id} className="border-t-2 border-[var(--polar)]">
-                    <td className="py-3">{i + 1}</td><td>{w.studentName}</td><td>{w.maskedPhone}</td><td>{w.network}</td>
-                    <td>{w.averagePercentage}%</td><td>{fmt(w.totalTimeSpentSeconds)}</td><td>₦{amount.toLocaleString()}</td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
+
+            {/* Mobile Cards (< md) */}
+            <div className="md:hidden divide-y divide-[var(--swan)]">
+              {winners.map((w, i) => (
+                <div key={w.id} className="py-3 flex flex-col gap-1.5 text-xs">
+                  <div className="flex items-center justify-between">
+                    <span className="font-bold flex items-center gap-2">
+                      <span className="w-5 h-5 rounded-full bg-amber-100 text-amber-800 text-[10px] font-black flex items-center justify-center">{i + 1}</span>
+                      {w.studentName}
+                    </span>
+                    <span className="font-black text-amber-700">₦{amount.toLocaleString()}</span>
+                  </div>
+                  <div className="flex items-center justify-between text-[11px] text-[var(--wolf)] font-mono">
+                    <span>{w.maskedPhone} ({w.network})</span>
+                    <span>{w.averagePercentage}% in {fmt(w.totalTimeSpentSeconds)}</span>
+                  </div>
+                </div>
+              ))}
+            </div>
+
+            {/* Desktop Table (>= md) */}
+            <div className="hidden md:block overflow-x-auto">
+              <table className="w-full text-left">
+                <thead><tr className="label"><th>#</th><th>Student</th><th>Phone</th><th>Network</th><th>Score</th><th>Time</th><th>Airtime</th></tr></thead>
+                <tbody>
+                  {winners.map((w, i) => (
+                    <tr key={w.id} className="border-t-2 border-[var(--polar)]">
+                      <td className="py-3">{i + 1}</td><td>{w.studentName}</td><td>{w.maskedPhone}</td><td>{w.network}</td>
+                      <td>{w.averagePercentage}%</td><td>{fmt(w.totalTimeSpentSeconds)}</td><td>₦{amount.toLocaleString()}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
           </div>
         </div>
       )}

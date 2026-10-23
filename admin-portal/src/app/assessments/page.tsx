@@ -110,7 +110,7 @@ export default function AdminAssessmentsPage() {
 
         <Link
           href="/assessments/new"
-          className="py-3 px-5 rounded-2xl font-bold text-white bg-emerald-600 hover:bg-emerald-700 text-sm flex items-center justify-center space-x-2 shadow-md shadow-emerald-600/30 active:scale-95 transition-all"
+          className="w-full sm:w-auto min-h-[44px] py-3 px-5 rounded-2xl font-bold text-white bg-emerald-600 hover:bg-emerald-700 text-sm flex items-center justify-center space-x-2 shadow-md shadow-emerald-600/30 active:scale-95 transition-all"
         >
           <PlusCircle className="w-4 h-4" />
           <span>Author New Quiz</span>
@@ -148,7 +148,7 @@ export default function AdminAssessmentsPage() {
                     <button
                       onClick={() => a.id && handleToggleStatus(a.id, a.isActive)}
                       disabled={isToggling}
-                      className={`inline-flex items-center space-x-1.5 px-3 py-1 rounded-full text-xs font-bold border transition-all cursor-pointer ${
+                      className={`inline-flex items-center space-x-1.5 min-h-[38px] px-3.5 py-1.5 rounded-full text-xs font-bold border transition-all cursor-pointer active:scale-95 ${
                         a.isActive 
                           ? 'bg-emerald-100 text-emerald-800 border-emerald-300 hover:bg-emerald-200' 
                           : 'bg-slate-100 text-slate-600 border-slate-300 hover:bg-slate-200'
@@ -198,7 +198,7 @@ export default function AdminAssessmentsPage() {
 
                   <button
                     onClick={() => router.push(`/assessments/new?edit=${a.id}`)}
-                    className="text-xs font-bold text-emerald-700 hover:text-emerald-800 inline-flex items-center space-x-1 cursor-pointer"
+                    className="min-h-[40px] px-3 py-1.5 rounded-xl hover:bg-emerald-50 text-xs font-bold text-emerald-700 hover:text-emerald-800 inline-flex items-center space-x-1 cursor-pointer active:scale-95 transition-all"
                   >
                     <span>Edit / View</span>
                     <ArrowRight className="w-3.5 h-3.5" />

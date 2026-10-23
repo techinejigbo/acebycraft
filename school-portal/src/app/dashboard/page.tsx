@@ -264,30 +264,30 @@ export default function SchoolDashboardPage() {
       </div>
 
       {/* Controls & Tab Navigation */}
-      <div className="flex flex-col sm:flex-row items-center justify-between gap-3">
-        <div className="flex items-center gap-2">
+      <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3">
+        <div className="flex items-center gap-2 overflow-x-auto pb-1 max-w-full no-scrollbar">
           <button
             onClick={() => setActiveTab('roster')}
-            className={`btn text-xs !py-2 !px-4 ${activeTab === 'roster' ? 'btn-blue' : 'btn-outline'}`}
+            className={`btn text-xs !py-2 !px-3.5 whitespace-nowrap shrink-0 ${activeTab === 'roster' ? 'btn-blue' : 'btn-outline'}`}
           >
             <Users className="w-4 h-4" /> Student Roster ({filteredStudents.length})
           </button>
           <button
             onClick={() => setActiveTab('diagnostics')}
-            className={`btn text-xs !py-2 !px-4 ${activeTab === 'diagnostics' ? 'btn-red' : 'btn-outline'}`}
+            className={`btn text-xs !py-2 !px-3.5 whitespace-nowrap shrink-0 ${activeTab === 'diagnostics' ? 'btn-red' : 'btn-outline'}`}
           >
             <AlertCircle className="w-4 h-4" /> Frequently Missed Qs
           </button>
           <button
             onClick={() => setActiveTab('subjects')}
-            className={`btn text-xs !py-2 !px-4 ${activeTab === 'subjects' ? 'btn-yellow' : 'btn-outline'}`}
+            className={`btn text-xs !py-2 !px-3.5 whitespace-nowrap shrink-0 ${activeTab === 'subjects' ? 'btn-yellow' : 'btn-outline'}`}
           >
             <BarChart3 className="w-4 h-4" /> Subject Breakdown
           </button>
         </div>
 
         {/* Class Filter */}
-        <div className="flex items-center gap-2 self-end sm:self-auto">
+        <div className="flex items-center gap-2 self-start sm:self-auto shrink-0">
           <Filter className="w-4 h-4 text-[var(--wolf)]" />
           <span className="text-xs font-black text-[var(--wolf)] uppercase">Class:</span>
           <select
@@ -306,7 +306,77 @@ export default function SchoolDashboardPage() {
       {/* Tab 1: Student Roster */}
       {activeTab === 'roster' && (
         <div className="card p-0 overflow-hidden shadow-sm">
-          <div className="overflow-x-auto">
+          {/* Mobile Card View (< md) */}
+          <div className="md:hidden divide-y divide-[var(--swan)]">
+            {filteredStudents.length > 0 ? (
+              filteredStudents.map((s) => (
+                <div key={s.id} className="p-4 flex flex-col gap-3">
+                  <div className="flex items-start justify-between gap-2">
+                    <div>
+                      <div className="font-black text-base text-[var(--eel)]">{s.name}</div>
+                      <div className="text-xs text-[var(--wolf)] font-bold">{s.phone}</div>
+                    </div>
+                    <span className="pill text-xs font-bold bg-[var(--polar)] border border-[var(--swan)] shrink-0">
+                      {s.schoolClass}
+                    </span>
+                  </div>
+
+                  <div className="grid grid-cols-3 gap-2 bg-[var(--polar)] p-2.5 rounded-xl text-center">
+                    <div>
+                      <div className="text-[10px] font-black uppercase text-[var(--wolf)]">Average</div>
+                      <div
+                        className="text-base font-black mt-0.5"
+                        style={{ color: s.averagePercentage >= 80 ? 'var(--feather-shadow)' : 'var(--fox-shadow)' }}
+                      >
+                        {s.averagePercentage}%
+                      </div>
+                    </div>
+                    <div>
+                      <div className="text-[10px] font-black uppercase text-[var(--wolf)]">Score</div>
+                      <div className="text-sm font-black text-[var(--eel)] mt-0.5">
+                        {s.correctCount}/{s.totalQuestions}
+                      </div>
+                    </div>
+                    <div>
+                      <div className="text-[10px] font-black uppercase text-[var(--wolf)]">Time</div>
+                      <div className="text-xs font-mono font-bold text-[var(--wolf)] mt-0.5">
+                        {fmtTime(s.totalTimeSeconds)}
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="flex items-center justify-between gap-2 pt-1">
+                    <div>
+                      {s.airtimeWon ? (
+                        <span className="pill text-xs font-black" style={{ background: '#fff5cc', color: 'var(--fox)' }}>
+                          ⚡ ₦1,000 Airtime
+                        </span>
+                      ) : s.averagePercentage >= 80 ? (
+                        <span className="pill text-xs font-bold" style={{ background: '#ddf4ff', color: 'var(--macaw-shadow)' }}>
+                          Eligible (80%+)
+                        </span>
+                      ) : (
+                        <span className="text-xs text-[var(--hare)] font-bold">Standard</span>
+                      )}
+                    </div>
+                    <button
+                      onClick={() => setSelectedStudent(s)}
+                      className="btn btn-outline text-xs !py-1.5 !px-3 font-black cursor-pointer"
+                    >
+                      Breakdown →
+                    </button>
+                  </div>
+                </div>
+              ))
+            ) : (
+              <div className="p-8 text-center text-sm font-bold text-[var(--wolf)]">
+                No student submissions recorded for {school.name} yet. Submissions will appear live as students take their continuous assessments.
+              </div>
+            )}
+          </div>
+
+          {/* Desktop Table (>= md) */}
+          <div className="hidden md:block overflow-x-auto">
             <table className="w-full text-left text-sm border-collapse">
               <thead>
                 <tr className="border-b-2 border-[var(--swan)] bg-[var(--polar)] text-xs font-black text-[var(--wolf)] uppercase">
@@ -488,37 +558,38 @@ export default function SchoolDashboardPage() {
 
       {/* Student Breakdown Modal */}
       {selectedStudent && (
-        <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
-          <div className="card w-full max-w-lg p-6 max-h-[90vh] overflow-y-auto space-y-4">
-            <div className="flex items-center justify-between">
+        <div className="fixed inset-0 bg-black/60 z-50 flex items-end sm:items-center justify-center p-0 sm:p-4 backdrop-blur-xs">
+          <div className="card w-full sm:max-w-lg p-5 sm:p-6 max-h-[85vh] overflow-y-auto space-y-4 rounded-b-none sm:rounded-b-2xl border-b-0 sm:border-b-4 shadow-2xl animate-in slide-in-from-bottom duration-200">
+            <div className="flex items-start justify-between gap-3">
               <div>
-                <h3 className="text-xl font-black">{selectedStudent.name}</h3>
+                <h3 className="text-lg sm:text-xl font-black">{selectedStudent.name}</h3>
                 <p className="text-xs text-[var(--wolf)] font-bold">
-                  {selectedStudent.schoolClass} • {selectedStudent.phone} • Finished in {fmtTime(selectedStudent.totalTimeSeconds)}
+                  {selectedStudent.schoolClass} • {selectedStudent.phone} • {fmtTime(selectedStudent.totalTimeSeconds)}
                 </p>
               </div>
               <button
                 onClick={() => setSelectedStudent(null)}
-                className="pill py-1 px-3 text-xs font-black cursor-pointer hover:bg-[var(--polar)] border border-[var(--swan)]"
+                aria-label="Close dialog"
+                className="pill py-1.5 px-3 text-xs font-black cursor-pointer hover:bg-[var(--polar)] border border-[var(--swan)] shrink-0"
               >
                 ✕ Close
               </button>
             </div>
 
-            <div className="card card-green text-center p-3">
-              <div className="text-xs font-black uppercase text-[var(--feather-shadow)]">Overall 9-Subject Average</div>
-              <div className="text-3xl font-black text-[var(--feather-shadow)]">{selectedStudent.averagePercentage}%</div>
+            <div className="card card-green text-center p-3 sm:p-4">
+              <div className="text-[11px] font-black uppercase text-[var(--feather-shadow)]">Overall 9-Subject Average</div>
+              <div className="text-3xl sm:text-4xl font-black text-[var(--feather-shadow)]">{selectedStudent.averagePercentage}%</div>
               <div className="text-xs font-bold text-[var(--feather-shadow)]">
                 {selectedStudent.correctCount} of {selectedStudent.totalQuestions} questions correct
               </div>
             </div>
 
-            <h4 className="text-sm font-black uppercase text-[var(--wolf)]">Per-Subject Scores</h4>
+            <h4 className="text-xs font-black uppercase text-[var(--wolf)] tracking-wider">Per-Subject Scores</h4>
             <div className="grid grid-cols-2 gap-2">
               {Object.entries(selectedStudent.subjectScores).map(([subId, score]) => (
-                <div key={subId} className="p-2.5 rounded-xl border border-[var(--swan)] bg-[var(--polar)] flex justify-between items-center text-xs">
-                  <span className="font-bold uppercase text-[var(--eel)]">{subId}</span>
-                  <span className="font-black" style={{ color: score >= 80 ? 'var(--feather-shadow)' : 'var(--fox-shadow)' }}>
+                <div key={subId} className="p-2 sm:p-2.5 rounded-xl border border-[var(--swan)] bg-[var(--polar)] flex justify-between items-center text-xs">
+                  <span className="font-bold uppercase text-[var(--eel)] truncate pr-1">{subId}</span>
+                  <span className="font-black shrink-0" style={{ color: score >= 80 ? 'var(--feather-shadow)' : 'var(--fox-shadow)' }}>
                     {score}%
                   </span>
                 </div>
