@@ -121,9 +121,11 @@ h1, h2, h3, h4 {
 .label { display: block; font-size: .75rem; letter-spacing: .8px; text-transform: uppercase; color: var(--text-secondary); font-weight: 800; margin-bottom: .4rem; }
 
 /* ---------- CHIPS / PILLS ---------- */
-.pill {
-  display: inline-flex; align-items: center; gap: .4rem; padding: .35rem .75rem;
-  border-radius: 999px; font-weight: 800; font-size: .8rem;
+@layer components {
+  .pill {
+    display: inline-flex; align-items: center; gap: .4rem; padding: .35rem .75rem;
+    border-radius: 999px; font-weight: 800; font-size: .8rem; white-space: nowrap;
+  }
 }
 
 /* ---------- PROGRESS ---------- */
