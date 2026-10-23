@@ -250,8 +250,8 @@ export default function AssessmentArenaPage() {
 
         <div className={`card ${win ? 'card-yellow' : ''} font-black`}>
           {win
-            ? `⚡ Top 10 by speed win ₦${(cycleData?.rewardConfig?.amountNgn || 1000).toLocaleString()} airtime. Results go out Sunday night in the WhatsApp community and here in your Rewards tab.`
-            : 'You need an average of 80% to compete for airtime.'}
+            ? '⚡ Great job! You qualified for the weekly continuous assessment airtime scholarships. Rankings and rewards are announced on Sunday night.'
+            : 'You need an average of 80% or higher to qualify for airtime scholarships.'}
         </div>
 
         <h2 className="text-xl">Your feedback</h2>

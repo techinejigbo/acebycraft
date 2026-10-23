@@ -171,7 +171,7 @@ export default function DashboardPage() {
                 </h1>
                 <p className="text-sm opacity-90 mt-1">
                   {assessmentStatus.canStart
-                    ? `Score 80%+ and finish fast to win ₦${(assessmentStatus.activeCycle?.rewardConfig?.amountNgn || 1000).toLocaleString()} airtime.`
+                    ? 'Score 80%+ and finish fast to qualify for weekly airtime scholarships.'
                     : assessmentStatus.statusMessage}
                 </p>
               </div>
@@ -189,14 +189,9 @@ export default function DashboardPage() {
               </div>
             ) : (
               <div className="flex flex-col gap-4">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <h2 className="text-lg font-black text-[var(--eel)]">Weekly Assessment Arena</h2>
-                    <p className="text-xs text-[var(--wolf)] font-bold">10 objective questions per subject · 1 single timed attempt</p>
-                  </div>
-                  <span className="pill text-xs font-black" style={{ background: current ? '#d7ffb8' : '#ddf4ff', color: current ? 'var(--feather-shadow)' : 'var(--macaw-shadow)' }}>
-                    {current ? 'Completed' : `${mySubjects.length} Subjects Ready`}
-                  </span>
+                <div>
+                  <h2 className="text-lg font-black text-[var(--eel)]">Weekly Assessment Arena</h2>
+                  <p className="text-xs text-[var(--wolf)] font-bold">10 objective questions per subject · 1 single timed attempt</p>
                 </div>
 
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
@@ -242,22 +237,6 @@ export default function DashboardPage() {
                       </div>
                     );
                   })}
-                </div>
-
-                {/* Final Sunday Rewards milestone card */}
-                <div className="card flex items-center justify-between p-4" style={{ background: '#fffbeb', borderColor: 'var(--bee)' }}>
-                  <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 rounded-xl flex items-center justify-center shrink-0" style={{ background: 'var(--bee)', color: '#fff' }}>
-                      <Trophy className="w-5 h-5" />
-                    </div>
-                    <div>
-                      <div className="font-black text-sm text-[var(--eel)]">Sunday Night Broadcast & Rewards</div>
-                      <div className="text-xs text-[var(--fox)] font-bold">Top 10 speed rankings published in WhatsApp community</div>
-                    </div>
-                  </div>
-                  <span className="pill text-xs font-black" style={{ background: '#fff', color: 'var(--fox)' }}>
-                    ₦{(assessmentStatus.activeCycle?.rewardConfig?.amountNgn || 1000).toLocaleString()} Airtime
-                  </span>
                 </div>
 
                 {!current && mySubjects.length > 0 && (
@@ -351,7 +330,7 @@ export default function DashboardPage() {
             <div className="rounded-2xl p-6 text-center" style={{ background: 'var(--bee)', borderBottom: '5px solid var(--bee-shadow)' }}>
               <Trophy className="w-14 h-14 mx-auto text-white" />
               <h1 className="!text-white text-2xl mt-2">Weekly airtime rewards</h1>
-              <p className="text-white/90 mt-1">Top {assessmentStatus.activeCycle?.rewardConfig?.winnerQuota || 10} students with 80%+ average and the fastest total time win.</p>
+              <p className="text-white/90 mt-1">Students with 80%+ average and top completion times qualify for weekly airtime scholarships.</p>
             </div>
 
             <div className="grid sm:grid-cols-3 gap-4">
